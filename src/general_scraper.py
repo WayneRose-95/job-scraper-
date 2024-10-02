@@ -1,7 +1,10 @@
 from fake_useragent import UserAgent
+from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium import webdriver
 from random import uniform
 from selenium.webdriver import ChromeService
@@ -19,12 +22,12 @@ class GeneralScraper:
 
     '''
     def __init__(self, driver_config_file : str, file_type : str = 'yaml', website_options=False):
-        '''
+        """
         Attributes
 
         self.driver : takes in a new instance of the selenium webdriver object 
 
-        '''
+        """
         self.driver_config = self.load_driver_config(driver_config_file, file_type)
         self.website_options = website_options 
 
@@ -36,7 +39,7 @@ class GeneralScraper:
 
 
     def load_driver_config(self, config_path : str, file_type : str = 'json' or 'yaml' or 'yml'):
-        '''
+        """
         Method to load in a configuration file to 
         select the type of selenium webdriver object to use
 
@@ -57,7 +60,7 @@ class GeneralScraper:
         A dictionary of key-value pairs for the configuration file. 
 
         If the file is not available a FileNotFoundError will be raised
-        '''
+        """
         if file_type == 'json':
             try:
                 with open(config_path, 'r') as file:
@@ -210,11 +213,13 @@ class GeneralScraper:
     
     def setup_stealth_driver(self):
         '''
+
         Sets up an undetected stealth driver using the selenium-stealth package
 
         Returns: 
         driver : WebDriver 
         A selenium WebDriver object
+
         '''
 
         if self.website_options:
@@ -254,14 +259,97 @@ class GeneralScraper:
 
             return driver
     
-    def land_first_page(self, url):
+    def land_first_page(self, url : str):
+        '''
+        Lands the first page on a website given a url. 
 
+        Parameters: 
+
+        url : str 
+
+        The url of the website 
+
+        '''
         try:
-            sleep(uniform)
-        pass 
+            sleep(uniform(1, 3))
+            self.driver.get(url)
+            print(f"Successfully navigated to URL: {self.base_url}")
+            sleep(uniform(2, 4))
+        
+        except Exception as e:
+            print(f"Error navigating to URL {self.base_url}: {e}")
+            raise e
 
-    def interact_with_search_bar(self):
-        pass 
+    def click_button_on_page(self, button_xpath : str):
+        '''
+        Method to click a button on a webpage 
+
+        Parameters: 
+
+        button_xpath : str 
+
+        A string representing a button element on a webpage 
+
+        Returns: button_element : WebElement 
+
+        A Selenium Webdriver WebElement representing the button 
+        on the webpage. 
+
+        '''
+        try:
+            button_element = self.driver.find_element(By.XPATH, button_xpath)
+            button_element.click() 
+            sleep(uniform(0.5, 2))
+            return button_element
+        # If it does not exist, raise a NoSuchElementException
+        except NoSuchElementException:
+            print(f'No such element. Please verify your xpath: {button_xpath}')
+            raise NoSuchElementException
+
+        # If the element is not interactable i.e. is not a button, raise an ElementNotInteractableException. 
+        except ElementNotInteractableException:
+            print('Element is not interactable ({button_xpath}), please verify that a button tag is used')
+            raise ElementNotInteractableException
+         
+
+    def interact_with_search_bar(self, search_bar_xpath : str, search_bar_text : str, search_bar_button_xpath : str = None):
+        """
+        Method to interact with the search bar on the webpage 
+        
+        Parameters: 
+
+        search_bar_xpath : str 
+
+        A string representing the search bar web element
+
+        search_bar_text : str 
+
+        The text to input 
+        
+        search_bar_button_xpath : str = None
+
+        A string representing the search button on the website 
+
+        """
+        # Click the search bar on the webpage 
+        search_bar_element = self.click_button_on_page(search_bar_xpath)
+
+        # Input the text into the search bar. 
+        for character in search_bar_text:
+            search_bar_element.send_keys(character)
+            # Sleep for a random period of 0.1 to 2.0 seconds.
+            sleep(uniform(0.1, 0.5))
+
+        # Handling logic for when a search button is present on the page
+        if search_bar_button_xpath is not None:
+            self.click_button_on_page(search_bar_xpath)
+            return search_bar_element, search_bar_text
+
+        # If there is no search bar button, then click the Enter key on the webpage
+        else:
+            search_bar_element.send_keys(Keys.ENTER)
+            sleep(uniform(1, 3))
+            return search_bar_element, search_bar_text
 
     def wait_for_loading(self):
         pass 
