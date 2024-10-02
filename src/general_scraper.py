@@ -1,5 +1,7 @@
 from fake_useragent import UserAgent
-from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException
+from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException, TimeoutException, StaleElementReferenceException
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -351,14 +353,61 @@ class GeneralScraper:
             sleep(uniform(1, 3))
             return search_bar_element, search_bar_text
 
-    def wait_for_loading(self):
-        pass 
+    def wait_for_loading(self, xpath : str, timeout=30):
+        """
+        Waits until a specified element is present on the page or until a timeout is reached.
 
-    def dismiss_element(self): 
-        pass 
+        Parameters:
+        - xpath (str): The XPath of the element to wait for.
+        - timeout (int, optional): The number of seconds to wait before timing out. Defaults to 30 seconds.
+        
+        Prints a message indicating whether the element was successfully located or if a timeout occurred.
+        """
+        
+        element_present = EC.presence_of_element_located((By.XPATH, xpath))
+        WebDriverWait(self.driver, timeout).until(element_present)
+        sleep(uniform(0.5, 2))
+        print(f"Page loaded, element {xpath} is present.")
+        return True
 
-    def navigate_to_next_page(self):
-        pass 
+    def dismiss_element(self, element_xpath, element_description):
+        """
+        Clicks on an element (pop-ups or dialog boxes) specified by its XPath if it is present and clickable.
+
+        Parameters:
+        - element_xpath (str): The XPath of the element to be dismissed.
+        - element_description (str): The type of element that is being dismissed.
+
+        If the element is clickable, it is clicked and dismissed. If the element is not
+        found within the timeout period, a message is printed. If an unexpected error occurs,
+        it is caught and a message is printed with the error details.
+        """
+        try:
+            WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.XPATH, element_xpath)))
+            element = self.driver.find_element(By.XPATH, element_xpath)
+            element.click()
+            sleep(uniform(0.5, 1.5))
+            print(f"{element_description} dismissed.")
+        except TimeoutException:
+            print(f"No {element_description} found to dismiss.")
+        except Exception as e:
+            print(f"Error dismissing {element_description}: {e}")
+            
+    def navigate_to_next_page(self, next_page_xpath : str):
+        '''
+        Given an xpath, navigates to the next page on a website. 
+
+        If the element is not present the pagination will stop. 
+        '''
+        try:
+            next_page_button = self.click_button_on_page(next_page_xpath)
+            return next_page_button
+        except NoSuchElementException:
+            print('No element found')
+        
+        except StaleElementReferenceException:
+            print('button already on page, refreshing browser')
+            self.driver.refresh() 
 
     def extract_element(self): 
         pass 
