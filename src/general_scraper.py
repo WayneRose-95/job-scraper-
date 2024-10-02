@@ -3,10 +3,12 @@ from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
+from random import uniform
 from selenium.webdriver import ChromeService
 from selenium_stealth import stealth
+from time import sleep
 import undetected_chromedriver as uc
+from webdriver_manager.chrome import ChromeDriverManager
 import json 
 import yaml 
 
@@ -252,7 +254,10 @@ class GeneralScraper:
 
             return driver
     
-    def land_first_page(self):
+    def land_first_page(self, url):
+
+        try:
+            sleep(uniform)
         pass 
 
     def interact_with_search_bar(self):
