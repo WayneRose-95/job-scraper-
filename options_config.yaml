@@ -1,0 +1,33 @@
+driver_type: 'undetected_stealth_driver' # options: stealth_driver, undetected_stealth_driver, setup_driver
+ 
+setup_driver:
+  browser: 'chrome'
+  arguments:
+    # - "--disable-blink-features=AutomationControlled" #OPTIONAL for undetected_stealth_driver
+    # - "--start-maximized" # OPTIONAL for undetected_stealth_driver
+    - '--no-sandbox' # bypass OS security model, required on Linux if running as root
+    - '--headless' # run headless
+    - '--disable-gpu' # applicable to windows os only
+    - '--remote-allow-origins=*'
+    - '--disable-dev-shm-usage'
+    - '--window-size=1920x1080'
+    - 'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+    - '--ignore-ssl-errors=yes'
+    - '--ignore-certificate-errors'
+    - '--disable-features=SameSiteByDefaultCookies,CookiesWithoutSameSiteMustBeSecure'
+    - '--log-level=3'  # Suppresses most console messages except severe
+  experimental_options:
+    excludeSwitches:
+      - 'enable-logging'
+      - "enable-automation"
+    useAutomationExtension:
+      - False
+
+selenium-stealth:
+  languages: ["en-US", "en"]
+  vendor: "Google Inc."
+  platform: "Win32" # Change to 'Win64' or 'Linux' or 'Darwin' depending on your platform
+  webgl_vendor: "Intel Inc."
+  renderer: "Intel Iris OpenGL Engine"
+  fix_hairline: True
+  run_on_insecure_origins : True
