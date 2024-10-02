@@ -31,7 +31,7 @@ class GeneralScraper:
         self.driver : takes in a new instance of the selenium webdriver object 
 
         """
-        self.driver_config = self.load_driver_config(driver_config_file, file_type)
+        self.driver_config = self.load_config_file(driver_config_file, file_type)
         self.website_options = website_options 
 
         self.driver_type = self.driver_config['driver_type']

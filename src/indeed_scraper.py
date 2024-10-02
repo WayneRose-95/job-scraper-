@@ -1,4 +1,4 @@
-from general_scraper import GeneralScraper
+from src.general_scraper import GeneralScraper
 from time import sleep 
 from random import uniform
 from datetime import datetime
@@ -9,10 +9,11 @@ import pandas as pd
 
 class IndeedScraper(GeneralScraper):
 
-    def __init__(self, scraper_config_filename : str, driver_config_file : str, file_type : str = 'yaml', website_options=False):
-        super.__init__(driver_config_file, file_type, website_options=website_options) 
+    def __init__(self, base_url : str, scraper_config_filename : str, driver_config_file : str, file_type : str = 'yaml', website_options=False):
+        super().__init__(driver_config_file, file_type, website_options=website_options) 
+        self.base_url = base_url 
         self.all_data_list = []
-        self.scraper_config = self.load_scraper_config(scraper_config_filename)
+        self.scraper_config = self.load_scraper_config(scraper_config_filename, file_type=file_type)
         pass 
     
     def load_scraper_config(self, scraper_config_path : str, file_type : str):
@@ -220,7 +221,7 @@ class IndeedScraper(GeneralScraper):
         NOTE: If the number_of_pages is None then the entire section will be scraped. 
 
         '''
-        self.land_first_page()
+        self.land_first_page(self.base_url)
         jobs_actions = self.scraper_config['jobs']
         for job, actions in jobs_actions.items():
             print(f"Processing actions for: {job}")
