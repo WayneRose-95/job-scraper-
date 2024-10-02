@@ -41,7 +41,7 @@ class GeneralScraper:
         self.driver = self.select_driver() 
 
 
-    def load_driver_config(self, config_path : str, file_type : str = 'json' or 'yaml' or 'yml'):
+    def load_config_file(self, config_path : str, file_type : str = 'json' or 'yaml' or 'yml'):
         """
         Method to load in a configuration file to 
         select the type of selenium webdriver object to use
