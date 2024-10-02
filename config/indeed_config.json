@@ -1,0 +1,29 @@
+{
+    "base_config": {
+        "url": "https://uk.indeed.com/",
+        "number_of_pages": 2,
+        "job_titles": "Data Engineer",
+        "cookies_path": "//*[@id='onetrust-reject-all-handler']",
+        "popup_path": "//*[@id='mosaic-desktopserpjapopup']/div[1]/button",
+        "next_page_xpath": "//a[@data-testid='pagination-page-next']"
+    },
+    "jobs": {
+        "apply_filters": {
+            "interact_with_searchbar": "//input[@id='text-input-what']",
+            "click_button_post_date": "//*[@id='filter-dateposted']",
+            "click_button_select_date": "//*[@id='filter-dateposted-menu']/li[1]/a"
+        },
+        "start_extraction": {
+            "extract_data": {
+                "main_container": "//*[@id='mosaic-jobResults']//*[contains(@class, 'job_seen_beacon')]",
+                "job_title": "//h1[@data-testid='jobsearch-JobInfoHeader-title']",
+                "company_name": "//div[@data-testid='inlineHeader-companyName']/span/a",
+                "location": "//div[@data-testid='inlineHeader-companyLocation']",
+                "salary_range": "//*[@id='salaryInfoAndJobType']//span",
+                "job_url": ".//a[contains(@class, 'jcs-JobTitle')]",
+                "job_description": "//*[@id='jobDescriptionText']", 
+                "date_extracted": ""
+            }
+        }
+    }
+}
