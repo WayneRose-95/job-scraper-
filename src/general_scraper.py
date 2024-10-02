@@ -1,5 +1,6 @@
 from fake_useragent import UserAgent
 from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException, TimeoutException, StaleElementReferenceException
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver import Chrome
@@ -409,8 +410,24 @@ class GeneralScraper:
             print('button already on page, refreshing browser')
             self.driver.refresh() 
 
-    def extract_element(self): 
-        pass 
+    def extract_element(self, context : WebElement, xpath : str, attribute="textContent"):
+        """
+        Attempts to extract an attribute from an element located by XPath within a given context.
+
+        Parameters:
+        - context (WebDriver or WebElement): The context within which to find the element.
+        - xpath (str): The XPath to locate the element.
+        - attribute (str): The attribute to retrieve from the element. Defaults to "textContent".
+
+        Returns:
+        - str: The extracted attribute value or "N/A" if the element is not found.
+        """
+        try:
+            element = context.find_element(By.XPATH, xpath)
+            return element.get_attribute(attribute).strip()
+        except NoSuchElementException:
+            print(f"Cannot extract content from {context}")
+            return "N/A"
 
     def extract_data_entry(self): 
         pass 
