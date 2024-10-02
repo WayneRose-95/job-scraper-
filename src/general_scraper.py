@@ -429,8 +429,13 @@ class GeneralScraper:
             print(f"Cannot extract content from {context}")
             return "N/A"
 
-    def extract_data_entry(self): 
-        pass 
+    def scroll_to_window(self, web_element : WebElement):
+        '''
+        Scrolls down the webpage into a set position 
+        The position selected is based on the location of a web_element.  
 
-    def scroll_to_window(self): 
-        pass 
+        Returns : None 
+        '''
+        self.driver.execute_script("arguments[0].scrollIntoView();", web_element)
+
+
