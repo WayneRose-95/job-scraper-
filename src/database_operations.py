@@ -310,10 +310,81 @@ class DatabaseOperations:
         session.commit() 
         session.close() 
 
-    def update_ids(self):
-        pass 
+    def update_ids(self, engine : Engine, id_column_name : str, column_name : str, table_name : str): 
+        """
+        Method to update the id column within a database
 
-    def reset_ids(self):
-        pass 
+        Parameters: 
+
+        engine : Engine 
+
+        A sqlalchemy Engine object 
+
+        id_column_name : str 
+        
+        The name of the id column 
+
+        column_name : str 
+
+        The name of a column inside the database
+
+        table_name : str 
+
+        The name of the table inside the database 
+
+        """
+        sql_session = sessionmaker(bind=engine)
+        session = sql_session() 
+
+        sql_statement = f"""WITH duplicates AS (
+                            SELECT {id_column_name}
+                            FROM (
+                                SELECT {id_column_name}, {column_name},
+                                    ROW_NUMBER() OVER (PARTITION BY {column_name} ORDER BY {id_column_name}) AS row_num
+                                FROM {table_name}
+                            ) AS subquery
+                            WHERE row_num > 1
+                            )
+
+                            DELETE FROM {table_name}
+                            WHERE {id_column_name} IN (SELECT {id_column_name} FROM duplicates);"""
+        session.execute(text(sql_statement))
+        session.commit() 
+        session.close() 
+
+    def reset_ids(self, engine : Engine, id_column_name : str, table_name : str): 
+        """
+        Method to update the id column within a database
+
+        Parameters: 
+
+        engine : Engine 
+
+        A sqlalchemy Engine object 
+
+        id_column_name : str 
+        
+        The name of the id column 
+
+        table_name : str 
+
+        The name of the table inside the database 
+
+        """
+        sql_session = sessionmaker(bind=engine)
+        session = sql_session() 
+
+        sql_statement = f"""WITH reset_ids AS (
+                            SELECT {id_column_name}, ROW_NUMBER() OVER (ORDER BY {id_column_name}) AS new_id
+                            FROM {table_name}
+                            )
+
+                            UPDATE {table_name}
+                            SET {id_column_name} = reset_ids.new_id
+                            FROM reset_ids
+                            WHERE {table_name}.{id_column_name} = reset_ids.{id_column_name};"""
+        session.execute(text(sql_statement))
+        session.commit() 
+        session.close() 
 
     
