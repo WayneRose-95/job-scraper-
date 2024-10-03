@@ -1,6 +1,11 @@
-import boto3
 from botocore.exceptions import ClientError
 from datetime import datetime
+from io import StringIO
+from uuid import uuid4
+import boto3
+import pandas as pd
+
+
 class S3DataProcessing: 
 
     def __init__(self, bucket_name : str):
@@ -135,22 +140,241 @@ class S3DataProcessing:
             print(f"Uploaded {file_name} to S3 bucket {self.bucket_name} in folder {folder}.")
         except Exception as e:
             print(f"Failed to upload {file_name} to S3: {e}")
-        pass
+       
 
 class DataFrameManipulation: 
 
-    def raw_to_dataframe(self):
-        pass 
+    def raw_to_dataframe(self, list_of_objects : list):
+        '''
+        Method to read raw data from a list of objects, 
+        decode it, and convert objects
+        into a pandas DataFrame.
+        
+        Parameters
+        ----------
+        list_of_objects : list
+            a list containing objects. 
+            Each object in the list should have a `read()` method that returns raw data in
+            bytes, which can be decoded using UTF-8 encoding.
+        
+        Returns
+        -------
+            A DataFrame object created from the raw data extracted from the list of objects.
+        
+        '''
+        number_of_objects = len(list_of_objects)
 
-    def build_dimension_table(self):
-        pass 
+        for element in number_of_objects:
+            raw_data = element.read().decode('utf-8')
 
-    def build_time_dimension_table(self):
-        pass 
+        df = pd.read_csv(StringIO(raw_data), delimiter=',')
 
-    def build_fact_table(self):
-        pass 
+        return df 
+         
 
+    def build_dimension_table(self, df : pd.DataFrame, unique_column_name : str, order_of_columns : list):
+        '''
+        Creates a dimension table from a DataFrame using a specified
+        unique column and order of columns.
+        
+        Parameters
+        ----------
+        df : pd.DataFrame
+            A pandas DataFrame that contains the data from which the dimension table is built. 
+
+        unique_column_name : str
+            A string represnting the name of the column in the DataFrame (`df`) that contains the values 
+            from which the dimension table is created. 
+    
+        order_of_columns : list
+            A list which specifies the desired order of columns in the
+            resulting dimension table. It determines the sequence in which columns will appear in the final
+            DataFrame.
+        
+        Returns
+        -------
+            A pandas DataFrame that represents a dimension table.
+        
+        '''
+        # Create a list of unique values using a column from the dataframe. 
+        list_of_unique_names = list(df[unique_column_name].unique())
+        print(list_of_unique_names)
+
+        dimension_table_df = pd.DataFrame({unique_column_name: list_of_unique_names})
+
+        # Setting the row_indexer as the index of the new dataframe
+        row_indexer = dimension_table_df.index
+        # Setting the column_indexer as the list containing the unique_column_name
+        col_indexer = [f"{unique_column_name}_id"]
+        # Setting the id values using the .loc method  
+        dimension_table_df.loc[row_indexer, col_indexer] = dimension_table_df.index.to_numpy() + 1
+        # Converting the id column inside the dimension table to an integer
+        dimension_table_df[f"{unique_column_name}_id"] = dimension_table_df[f"{unique_column_name}_id"].astype(int)
+        
+        # Setting the column order ]
+        column_order = order_of_columns
+        dimension_table_df = dimension_table_df[column_order]
+        return dimension_table_df
+
+    def build_time_dimension_table(self, df : pd.DataFrame, datetime_field_column_name : str, column_order : list):
+        '''
+        
+        Method to take a DataFrame, extracts various date and time
+        components from a specified datetime column, adds additional columns with boolean values, generates
+        a UUID for each row, and reorders the columns based on a specified order.
+        
+        Parameters
+        ----------
+        df : pd.DataFrame
+            A pandas DataFrame containing the data to build a time
+            dimension table.
+        datetime_field_column_name : str
+            A string representing the name of the column in the DataFrame `df` that
+            contains datetime values which will be used to build the time dimension table.
+        column_order : list
+            A list which specifies the desired order of columns in the resulting
+            DataFrame after building the time dimension table. 
+    
+        Returns
+        -------
+            A pandas DataFrame that represents a time dimension table.
+        '''
+        # Convert the date_extracted column to a datetime 
+        df[datetime_field_column_name] = pd.to_datetime(df[datetime_field_column_name])
+
+        # Extracting the year, month, day and timestamp from the date column 
+        df['year'] = df[datetime_field_column_name].dt.year
+        df['month'] = df[datetime_field_column_name].dt.month
+        df['day'] = df[datetime_field_column_name].dt.day
+        df['timestamp'] = df[datetime_field_column_name].dt.strftime('%H:%M:%S')
+        df['date'] = df[datetime_field_column_name].dt.date
+
+        # Extracting the quarter from the date column 
+        df['quarter'] = df[datetime_field_column_name].dt.quarter
+        df['day_of_week'] = df[datetime_field_column_name].dt.day_name()
+        df['month_name'] = df[datetime_field_column_name].dt.month_name()
+
+        # Boolean columns for month_end, leap_year, month_start, quarter_start and quarter_end
+        df['is_month_end'] = df[datetime_field_column_name].dt.is_month_end
+        df['is_leap_year'] = df[datetime_field_column_name].dt.is_leap_year
+        df['is_month_start'] = df[datetime_field_column_name].dt.is_month_start
+        df['is_quarter_start'] = df[datetime_field_column_name].dt.is_quarter_start
+        df['is_quarter_end'] = df[datetime_field_column_name].dt.is_quarter_end
+
+        df['date_uuid'] = [uuid4() for _ in range(len(df))]
+
+        time_dimension_df_column_order = column_order
+        # Assigning the order of columns
+        # time_dimension_df_column_order = [
+        #     'date_extracted_id', 'date_uuid', 'year', 'month', 'day',
+        #         'date', 'timestamp', datetime_field_column_name,'quarter', 'day_of_week',
+        #     'month_name', 'is_month_end', 'is_leap_year', 'is_month_start',
+        #     'is_quarter_start', 'is_quarter_end'
+        # ]
+        # Applying the column order to the time_dimension dataframe
+        df = df[time_dimension_df_column_order]
+
+        return df 
+    
+    def build_fact_table(self, 
+                         df : pd.DataFrame, 
+                         job_title_df : pd.DataFrame, 
+                         company_df : pd.DataFrame, 
+                         location_df : pd.DataFrame, 
+                         job_url_df : pd.DataFrame, 
+                         description_df : pd.DataFrame, 
+                         time_dimension_df : pd.DataFrame
+                         ):
+        
+        '''
+        Merges data from multiple DataFrames to create a fact table for job
+        data, including extracting salary information and applying static methods.
+        
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The `build_fact_table` function takes in several DataFrames as input parameters to build a fact
+            table. Here is a brief explanation of each parameter:
+        job_title_df : pd.DataFrame
+            The `job_title_df` parameter is a DataFrame containing information about job titles. This DataFrame
+            likely includes columns such as `job_title` and corresponding identifiers or codes for each job
+            title. This information is used to merge with the main DataFrame (`df`) to enrich the data with
+            additional details related to job
+        company_df : pd.DataFrame
+            The `company_df` parameter in the `build_fact_table` function is a DataFrame containing information
+            about companies. This DataFrame is used to merge with the main DataFrame (`df`) based on the
+            `company_name` column to enrich the fact table with additional company information. The merging
+            process helps consolidate data from
+        location_df : pd.DataFrame
+            The `location_df` parameter in the `build_fact_table` function is a DataFrame containing
+            information about job locations. This DataFrame is used to merge location data with the main
+            DataFrame `df` during the process of building a fact table for job data. The merging process
+            involves matching location information based on the
+        job_url_df : pd.DataFrame
+            The `job_url_df` parameter in the `build_fact_table` function is a DataFrame containing information
+            related to job URLs. This DataFrame is used to merge with the main DataFrame (`df`) to enrich the
+            fact table with job URL details. The merging process is done based on the 'job_url'
+        description_df : pd.DataFrame
+            The `description_df` parameter in the `build_fact_table` function is a DataFrame containing job
+            descriptions. This DataFrame is used to merge with other DataFrames such as `job_title_df`,
+            `company_df`, `location_df`, `job_url_df`, and `time_dimension_df` to build a
+        time_dimension_df : pd.DataFrame
+            The `time_dimension_df` parameter in the `build_fact_table` function is a DataFrame containing
+            time-related information such as dates, timestamps, and other time dimensions that are relevant to
+            the job data being processed. This DataFrame is used to merge with the main DataFrame `df` to create
+            a fact table
+        
+        Returns
+        -------
+            The `build_fact_table` method returns a pandas DataFrame `fact_job_data_df` that contains
+            information from various DataFrames merged together and processed. The DataFrame includes columns
+            such as unique_id, date_uuid, job_title_id, company_name_id, location_id, job_url_id,
+            job_description_id, date_extracted_id, salary_range, min_salary, max_salary, full_time_flag,
+            contract_flag
+        
+        '''
+        df['date_extracted'] = pd.to_datetime(df['date_extracted'])
+        # Merging job_title_df to the source_df 
+        title_merge_df = pd.merge(df, job_title_df, how='left', left_on='job_title', right_on='job_title')
+
+        company_merge_df = pd.merge(title_merge_df, company_df, how='left', left_on='company_name', right_on='company_name')
+
+        location_merge_df = pd.merge(company_merge_df, location_df, how='left', left_on='location', right_on='location')
+
+        job_url_merged_df = pd.merge(location_merge_df, job_url_df, how='left', left_on='job_url', right_on='job_url')
+
+        description_merged_df = pd.merge(job_url_merged_df, description_df, how='left', left_on='job_description', right_on='job_description')
+
+        # Adding uuid column to fact table to act as primary key
+        description_merged_df['unique_id'] = [str(uuid4()) for _ in range(len(description_merged_df))]
+
+        # Converting 'date_extracted' to datetime type
+        description_merged_df['date_extracted'] = pd.to_datetime(description_merged_df['date_extracted'])
+        time_dimension_df['date_extracted'] = pd.to_datetime(time_dimension_df['date_extracted'])
+        
+        print(description_merged_df.info())
+        print(time_dimension_df.info())
+        fact_job_data_df = pd.merge(description_merged_df, time_dimension_df, on='date_extracted', how='left')
+
+        # Applying staticmethods to the dataframe 
+        fact_job_data_df['min_salary'] = fact_job_data_df['salary_range'].apply(lambda x: self.extract_min_salary(x))
+        fact_job_data_df['max_salary'] = fact_job_data_df['salary_range'].apply(lambda x: self.extract_max_salary(x))
+        fact_job_data_df['full_time_flag'] = fact_job_data_df['salary_range'].apply(lambda x: self.is_full_time(x))
+        fact_job_data_df['contract_flag'] = fact_job_data_df['salary_range'].apply(lambda x: self.is_contract(x))
+        fact_job_data_df['competitive_flag'] = fact_job_data_df['salary_range'].apply(lambda x: self.is_competitive(x))
+
+        # Selecting and assigning the column_order 
+        fact_job_data_df_order = ['unique_id', 'date_uuid', 'job_title_id', 'company_name_id',
+       'location_id', 'job_url_id', 'job_description_id', 'date_extracted_id', 'salary_range',
+       'min_salary', 'max_salary', 'full_time_flag', 'contract_flag',
+       'competitive_flag'
+            ]
+
+        fact_job_data_df = fact_job_data_df[fact_job_data_df_order]
+
+        return fact_job_data_df
+    
+    #TODO: Should this method be inside this class? 
     @staticmethod
     def extract_from_url():
         pass 
