@@ -31,7 +31,7 @@ class GeneralScraper:
         self.driver : takes in a new instance of the selenium webdriver object 
 
         """
-        self.driver_config = self.load_driver_config(driver_config_file, file_type)
+        self.driver_config = self.load_config_file(driver_config_file, file_type)
         self.website_options = website_options 
 
         self.driver_type = self.driver_config['driver_type']
@@ -41,7 +41,7 @@ class GeneralScraper:
         self.driver = self.select_driver() 
 
 
-    def load_driver_config(self, config_path : str, file_type : str = 'json' or 'yaml' or 'yml'):
+    def load_config_file(self, config_path : str, file_type : str = 'json' or 'yaml' or 'yml'):
         """
         Method to load in a configuration file to 
         select the type of selenium webdriver object to use
