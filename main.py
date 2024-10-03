@@ -154,6 +154,24 @@ def filter_dataframes(dataframe_dict : dict, target_engine : Engine, land_job_da
 
     return dataframe_dict
 
+def update_and_filter_dimension_tables(target_engine : Engine): 
+
+    # for dim_job_title table 
+    operator.update_ids(target_engine, "job_title_id", "job_title", "dim_job_title")
+    operator.reset_ids(target_engine, "job_title_id", "dim_job_title")
+
+    # for dim_location table 
+    operator.update_ids(target_engine, "location_id", "location", "dim_location")
+    operator.reset_ids(target_engine, "location_id","dim_location")
+
+    # for dim_job_url table 
+    operator.update_ids(target_engine, "job_url_id", "job_url", "dim_job_url")
+    operator.reset_ids(target_engine, "job_url_id","dim_job_url")
+    
+    # for dim_description table 
+    operator.update_ids(target_engine, "job_description_id", "job_description", "dim_description")
+    operator.reset_ids(target_engine, "job_description_id","dim_description")
+
 def upload_dataframes(dataframe_dict : dict, target_engine : Engine, upload_condition : str, first_load=False):
 
     if first_load:
