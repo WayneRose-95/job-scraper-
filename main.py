@@ -1,5 +1,6 @@
 from collections import Counter
 from datetime import datetime 
+from pandas import DataFrame
 from src.data_processing import S3DataProcessing
 from src.data_processing import DataFrameManipulation
 from src.database_operations import DatabaseOperations
@@ -40,9 +41,9 @@ def upload_to_s3(s3_file_name : str):
     data_processor.upload_file_to_s3(s3_file_name, s3_object_name, file_directory)
 
 def create_job_database():
-    server_engine = operator.connect(target_db_config, new_db_name=database_name)
+    target_engine = operator.connect(target_db_config, new_db_name=database_name)
     # Create the database
-    database = operator.create_database(server_engine, database_name)
+    database = operator.create_database(target_engine, database_name)
     # Once created create another engine to connect to the database itself. 
     target_database_engine = operator.connect(target_db_config, connect_to_database=True, new_db_name=database_name)
     return target_database_engine 
@@ -111,15 +112,69 @@ def database_table_name_check(dataframe_dict : dict, target_db_engine : Engine):
         return True 
     else: 
         return False
+    
+def filter_dataframes(dataframe_dict : dict, target_engine : Engine, land_job_data_df : DataFrame):
+    # Where dataframe_dict represents a dictionary of dataframes to upload
 
-def upload_dataframes(dataframe_dict : dict, target_engine : Engine, upload_condition : str):
+    current_location_df = operator.read_rds_table(target_engine, "dim_location")
+    new_location_df = operator.upsert_table(current_location_df, dataframe_dict['dim_location'], 'location_id', 'location')
 
-    for key, value in dataframe_dict.items():
-        print(key)
-        if "land" in key:
-            operator.send_data_to_database(value, target_engine, key, "replace", database_schema)
-        else:
-            operator.send_data_to_database(value, target_engine, key, upload_condition, database_schema)
+
+    current_job_url_df = operator.read_rds_table(target_engine, "dim_job_url")
+    new_job_url_df = operator.upsert_table(current_job_url_df, dataframe_dict['dim_job_url'], 'job_url_id', 'job_url')
+    
+    current_time_dimension_df = operator.read_rds_table(target_engine, "dim_date")
+    new_time_dimension_df = operator.upsert_table(current_time_dimension_df, dataframe_dict['dim_date'], 'date_extracted_id', 'date_extracted')
+    
+    
+    current_description_df = operator.read_rds_table(target_engine, 'dim_description')
+    new_description_df = operator.upsert_table(current_description_df, dataframe_dict['dim_description'], 'job_description_id', 'job_description')
+    
+    
+    current_company_df = operator.read_rds_table(target_engine, 'dim_company')
+    new_company_df = operator.upsert_table(current_company_df, dataframe_dict['dim_company'], 'company_name_id', 'company_name')
+  
+    
+    current_job_title_df = operator.read_rds_table(target_engine, 'dim_job_title')
+    new_job_title_df = operator.upsert_table(current_job_title_df, dataframe_dict['dim_job_title'], 'job_title_id', 'job_title')
+    
+    
+    # rebuilding the fact_table 
+    new_fact_job_data = dataframe_manipulation.build_fact_table(
+        land_job_data_df, 
+        new_job_title_df,
+        new_company_df,
+        new_location_df,
+        new_job_url_df,
+        new_description_df,
+        new_time_dimension_df
+    )
+
+    dataframe_dict['fact_job_data'] = new_fact_job_data
+
+    return dataframe_dict
+
+def upload_dataframes(dataframe_dict : dict, target_engine : Engine, upload_condition : str, first_load=False):
+
+    if first_load:
+        for key, value in dataframe_dict.items():
+            print(key)
+            if "land" in key:
+                operator.send_data_to_database(value, target_engine, key, "replace", database_schema)
+            else:
+                operator.send_data_to_database(value, target_engine, key, upload_condition, database_schema)
+
+    else:
+        for key, value in dataframe_dict.items():
+            print(key)
+            if "land" in key:
+                operator.send_data_to_database(value, target_engine, key, "replace", database_schema)
+            # skip uploading the fact job data dataframe on second load create a seperate function to load the fact data. 
+            elif "fact" in key:
+                continue
+            else:
+                operator.send_data_to_database(value, target_engine, key, upload_condition, database_schema)
+
 
 
 if __name__ == "__main__":
