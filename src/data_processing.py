@@ -294,7 +294,7 @@ class DataFrameManipulation:
         Parameters
         ----------
         df : pd.DataFrame
-            The `build_fact_table` function takes in several DataFrames as input parameters to build a fact
+            Takes in several DataFrames as input parameters to build a fact
             table. Here is a brief explanation of each parameter:
         job_title_df : pd.DataFrame
             The `job_title_df` parameter is a DataFrame containing information about job titles. This DataFrame
