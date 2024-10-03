@@ -69,10 +69,31 @@ class S3DataProcessing:
       
 
     def create_s3_directory(self, website_name : str):
+        '''
+        Creates a directory structure in an S3 bucket based on the
+        website name and current date.
+        
+        Parameters
+        ----------
+        website_name : str
+            A string representing the name of website. 
+            This is the first directory inside the S3 bucket. 
+            After which further entries will be structured by date. 
+            Year/Month/Day. 
+        
+        Returns
+        -------
+        directory_name : str 
+            The name of the directory if the directory was successfully created 
+            or if it already exists. 
+            
+            If an error occurs during the process, it returns `None`.
+        
+        '''
         # Get the current datetime 
         current_date = datetime.now() 
         # Create the file_path
-        directory_name = f'job-data/{website_name}/{current_date.year}/{current_date.month}/{current_date.day}/'
+        directory_name = f'{website_name}/{current_date.year}/{current_date.month}/{current_date.day}/'
         placeholder_file = directory_name + "placeholder.txt"
 
         try: 
@@ -93,7 +114,27 @@ class S3DataProcessing:
             return None
        
 
-    def upload_file_to_s3(self):
+    def upload_file_to_s3(self, file_name : str, object_name : str, folder : str):
+        '''
+        Method to upload a file to an S3 bucket with error handling.
+        
+        Parameters
+        ----------
+        file_name : str
+            A string that specifies the full path to the file
+            on your local system.
+        object_name : str
+            A string representing the key or path under which the file will be stored in the S3 bucket.
+        folder : str
+            A string which represents the folder within the S3
+            bucket where you want to upload the file. 
+        
+        '''
+        try:
+            self.s3_client.upload_file(file_name, self.bucket_name, object_name)
+            print(f"Uploaded {file_name} to S3 bucket {self.bucket_name} in folder {folder}.")
+        except Exception as e:
+            print(f"Failed to upload {file_name} to S3: {e}")
         pass
 
 class DataFrameManipulation: 
