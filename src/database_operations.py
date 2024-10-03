@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy import inspect
 from sqlalchemy.engine import Engine
 from sqlalchemy import text
+from sqlalchemy.orm import sessionmaker
 import yaml 
 
 class DatabaseOperations: 
@@ -76,7 +77,22 @@ class DatabaseOperations:
         return database_tables
 
     def create_database(self, engine : Engine, database_name : str):
+        """
+        Method to create a database. 
 
+        Parameters: 
+
+        engine : Engine 
+        
+        A sqlalchemy Engine object 
+
+        database_name : str 
+
+        The name of the database to be created
+
+        If the database is not present on the server, it will be created. 
+        If the database is present, then it will be skipped. 
+        """
         with engine.connect() as database_engine:
             if database_engine:
                 # If the database engine is present, then set the isolation level to autocommit 
@@ -99,10 +115,36 @@ class DatabaseOperations:
                 print('Database creation failed')
                 raise Exception 
 
-    @staticmethod
-    def database_name_check():
-        
-        pass 
+    @staticmethod 
+    def database_name_check(target_engine : Engine, database_name : str):
+        """
+        Method to check if a database is present on a postgres server. 
+
+        Parameters: 
+
+        target_engine : Engine 
+
+        A sqlalchemy Engine object 
+
+        database_name : str 
+
+        The name of the database 
+
+        """
+        #TODO: Adjust the method for other database engines
+        # Send a SQL statement to return a scalar result. 
+        database_check_statement = text(
+                    f"""
+                        SELECT EXISTS (
+                            SELECT 1
+                            FROM pg_database
+                            WHERE datname = '{database_name}'
+                        ) AS database_exists;
+                    """
+        )
+        with target_engine.connect() as target_connection:
+            result = target_connection.execute(database_check_statement)
+            return result 
 
     def read_rds_table(self):
         pass 
@@ -121,8 +163,17 @@ class DatabaseOperations:
     def send_data_to_database(self):
         pass 
 
-    def execute_sql(self):
-        pass 
+    def execute_sql(self, sql_file_path : str, engine : Engine):
+        sql_session = sessionmaker(bind=engine)
+        session = sql_session()
+
+        # Open the file pathway to the sql script. 
+        with open(sql_file_path, "r") as file: 
+            sql_statement = file.read()
+
+        session.execute(text(sql_statement))
+        session.commit() 
+        session.close() 
 
     def update_ids(self):
         pass 
