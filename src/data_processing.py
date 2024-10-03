@@ -4,6 +4,7 @@ from io import StringIO
 from uuid import uuid4
 import boto3
 import pandas as pd
+import re
 
 
 class S3DataProcessing: 
@@ -379,25 +380,181 @@ class DataFrameManipulation:
     def extract_from_url():
         pass 
 
-    @staticmethod
-    def extract_min_salary(salary):
-        pass 
     
     @staticmethod
-    def extract_max_salary(salary):
-        pass 
+    def extract_min_salary(salary):
+        '''
+        Parses salary information in various formats and returns the
+        minimum salary amount.
+        
+        Parameters
+        ----------
+        salary
+            A string representing the salary formats commonly found in job listings. 
+            It uses regular expressions 
+            to match patterns like "£43,000 - £50,000 a year", "From £48,000 a year", "£75,000
+        
+        Returns
+        -------
+            The `extract_min_salary` function is designed to extract the minimum salary amount from various
+            salary formats commonly found in job postings. It uses regular expressions to match patterns
+            such as "£43,000 - £50,000 a year", "From £48,000 a year", "£75,000 a year", "£12.80 - £15.30 an
+            hour", and "£
+        
+        '''
+        if pd.isna(salary):
+            return None
+        # Case: "£43,000 - £50,000 a year" or "£41,587.93 - £97,961.67 a year"
+        match = re.match(r'^\£([0-9,\.]+) - \£[0-9,\.]+ a year$', salary)
+        if match:
+            return float(match.group(1).replace(',', ''))
+        # Case: "From £48,000 a year"
+        match = re.match(r'^From \£([0-9,\.]+) a year$', salary)
+        if match:
+            return float(match.group(1).replace(',', ''))
+        # Case: "£75,000 a year"
+        match = re.match(r'^\£([0-9,\.]+) a year$', salary)
+        if match:
+            return float(match.group(1).replace(',', ''))
+        # Case: "£12.80 - £15.30 an hour"
+        match = re.match(r'^\£([0-9,\.]+) - \£[0-9,\.]+ an hour$', salary)
+        if match:
+            return float(match.group(1).replace(',', ''))
+        # Case: "£600 - £635 a day"
+        match = re.match(r'^\£([0-9,]+) - \£[0-9,]+ a day$', salary)
+        if match:
+            return float(match.group(1).replace(',', ''))
+        return None
 
+  
+    @staticmethod
+    def extract_max_salary(salary):
+        """
+        The function `extract_max_salary` in Python extracts the maximum salary value from various salary
+        formats specified in the input string.
+        
+        Parameters
+        ----------
+        salary
+            The `extract_max_salary` method is designed to extract the maximum salary value from various salary
+        formats. It uses regular expressions to match different patterns in the salary string and extract
+        the relevant numerical value.
+        
+        Returns
+        -------
+            The `extract_max_salary` method returns the maximum salary amount extracted from the input salary
+        string. If the input salary is in a specific format like "£43,000 - £50,000 a year", "Up to £60,000
+        a year", "£31 an hour", "£228.29 a day", "£12.80 - £15.30 an hour", or
+        
+        """
+        if pd.isna(salary):
+            return None
+        # Case: "£43,000 - £50,000 a year" or "£41,587.93 - £97,961.67 a year"
+        match = re.match(r'^\£[0-9,\.]+ - \£([0-9,\.]+) a year$', salary)
+        if match:
+            return float(match.group(1).replace(',', ''))
+        # Case: "Up to £60,000 a year"
+        match = re.match(r'^Up to \£([0-9,]+) a year$', salary)
+        if match:
+            return float(match.group(1).replace(',', ''))
+        # Case: "£31 an hour"
+        match = re.match(r'^\£([0-9,\.]+) an hour$', salary)
+        if match:
+            return float(match.group(1).replace(',', ''))
+        # Case: "£228.29 a day"
+        match = re.match(r'^\£([0-9,\.]+) a day$', salary)
+        if match:
+            return float(match.group(1).replace(',', ''))
+        # Case: "£12.80 - £15.30 an hour"
+        match = re.match(r'^\£[0-9,\.]+ - \£([0-9,\.]+) an hour$', salary)
+        if match:
+            return float(match.group(1).replace(',', ''))
+        # Case: "£600 - £635 a day"
+        match = re.match(r'^\£[0-9,\.]+ - \£([0-9,\.]+) a day$', salary)
+        if match:
+            return float(match.group(1).replace(',', ''))
+        return None
+ 
     @staticmethod
     def is_full_time(salary):
-        pass 
+        '''
+        Checks if a given salary string indicates a full-time position based on
+        specific keywords.
+        
+        Parameters
+        ----------
+        salary
+            A string representing a salary range
+        
+        Returns
+        -------
+            A boolean value based on whether the input `salary` contains
+            any of the specified keywords indicating a full-time position. 
 
+            If the `salary` is NaN or does not
+            contain any of the keywords, it returns False. 
+
+            If the `salary` contains any of the specified
+            keywords, it returns True.
+        
+        '''
+        if pd.isna(salary):
+            return False
+        if any(keyword in salary for keyword in ['£', 'permanent', 'full-time', 'Up to £', 'Permanent', 'Full-time']):
+            return True
+        return False
+
+    
     @staticmethod
     def is_contract(salary):
-        pass 
+        '''
+        Checks if a given salary string indicates a contract-based employment.
+        Any keywords related to contract
+        work such as 'contract', 'hour', 'day', 'Temporary', 'Temporary contract'.
+
+        Parameters
+        ----------
+        salary
+            A string which represents a salary range 
+        
+        Returns
+        -------
+            True, indicating that the salary is for a
+            contract position. Otherwise, it returns False.
+        
+        '''
+        if pd.isna(salary):
+            return False
+        if any(keyword in salary for keyword in ['contract', 'hour', 'day', 'Temporary', 'Temporary contract']):
+            return True
+        return False
+
     
     @staticmethod
     def is_competitive(salary):
-        pass 
+        '''
+        Checks if a salary is competitive. If the salary is `NaN` (not a
+        number) or if it is equal to the string `'N/A'`
+
+        Parameters
+        ----------
+        salary
+            A string representing a salary
+        
+        Returns
+        -------
+            The function `is_competitive` is checking if the `salary` is either `NaN` or equal to the string
+            `'N/A'`. If the `salary` meets either of these conditions, the function 
+            
+            returns `True` if the `salary` is either `NaN` or equal to the string
+            `'N/A'`., indicating that the salary is considered competitive. 
+            
+            Otherwise, it returns `False`, indicating that the salary is not competitive. 
+        
+        '''
+        if pd.isna(salary) or salary == 'N/A':
+            return True
+        return False
 
 
 
