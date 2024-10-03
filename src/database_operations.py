@@ -5,6 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import MetaData, Table, Column, VARCHAR, DATE, FLOAT, SMALLINT, BOOLEAN, TIME, NUMERIC, TIMESTAMP, INTEGER, UUID, DATETIME
 from pandas import DataFrame
+import pandas as pd
 
 import yaml 
 
@@ -162,10 +163,83 @@ class DatabaseOperations:
             return result 
 
     def read_rds_table(self, engine : Engine, table_name : str):
-        pass 
+        '''
+        Method to read in an rds table from a sql database
 
-    def upsert_table(self):
-        pass 
+        Given an Engine object, the method will read a sql table
+        into a pandas dataframe 
+
+        Parameters: 
+
+        engine : Engine 
+
+        A SQLAlchemy Engine object 
+
+        table_name : str 
+
+        The name of the table within the database 
+
+        Returns 
+
+        rds_table : pd.DataFrame 
+
+        A dataframe representing a table from the database
+        '''
+        
+        rds_table = pd.read_sql_table(table_name, engine)
+        return rds_table 
+
+    
+    def upsert_table(self, database_df : DataFrame, current_df : DataFrame, current_df_id_column_name : str, dimension_column_name : str):
+        """
+        Method to upsert a table by comparing two dataframes. 
+
+        Parameters: 
+
+        database_df : DataFrame 
+
+        The current dataframe extracted from the database 
+
+        current_df : DataFrame 
+
+        The dataframe to be compared with the dataframe extracted from the current database
+
+        current_df_id_column_name : str
+
+        The id column name inside the current dataframe
+        
+        dimension_column_name : str
+
+        The column name for the dimension table 
+
+        """
+        # Add the lengths of both dataframes together
+        total_number_of_records = len(database_df) + len(current_df)
+        # Concatenate the dataframe, dropping any duplicate records 
+        combined_df = pd.concat([database_df, current_df]).drop_duplicates(subset=[dimension_column_name])
+
+        
+        if len(combined_df) == total_number_of_records:
+            print('Number of records in new table match combined table')
+            # Set the id column in the current dataframe to the highest id column inside the database_df 
+            highest_id_in_column = database_df[current_df_id_column_name].max() 
+            # Sets the current id to the highest id in the new dataframe + 1 to avoid raising a primary key error
+            current_df[current_df_id_column_name] = current_df.index + highest_id_in_column + 1
+            return current_df 
+
+        else:
+            print('Number of records in new table do not match combined table')
+            # Set the id column in the current dataframe to the highest id column inside the database_df 
+            highest_id_in_column = database_df[current_df_id_column_name].max() 
+            # Sets the current id to the highest id in the new dataframe + 1 to avoid raising a primary key error
+            current_df[current_df_id_column_name] = current_df.index + highest_id_in_column + 1
+            # reconcatentate the dataframe 
+            combined_df = pd.concat([database_df, current_df]).drop_duplicates(subset=[dimension_column_name])
+            # Filter the combined dataframe to include only new records from the current dataframe
+            new_records_df = combined_df[~combined_df[current_df_id_column_name].isin(database_df[current_df_id_column_name])]
+            # Resetting the index 
+            new_records_df.reset_index(drop=True)
+            return new_records_df 
 
 
     
