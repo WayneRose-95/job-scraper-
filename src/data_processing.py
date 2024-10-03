@@ -165,7 +165,7 @@ class DataFrameManipulation:
         '''
         number_of_objects = len(list_of_objects)
 
-        for element in number_of_objects:
+        for element in list_of_objects:
             raw_data = element.read().decode('utf-8')
 
         df = pd.read_csv(StringIO(raw_data), delimiter=',')

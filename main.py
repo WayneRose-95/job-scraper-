@@ -3,6 +3,7 @@ from src.data_processing import S3DataProcessing
 from src.data_processing import DataFrameManipulation
 from src.database_operations import DatabaseOperations
 from src.indeed_scraper import IndeedScraper
+from sqlalchemy.engine import Engine
 
 current_date = datetime.now() 
 indeed_instance = IndeedScraper("https://uk.indeed.com/", 'config/indeed_config.json', 'config/options_config.yaml')
@@ -11,14 +12,16 @@ dataframe_manipulation = DataFrameManipulation()
 operator = DatabaseOperations()
 scraper_config = indeed_instance.scraper_config
 target_db_config = operator.load_db_credentials('config/db_creds.yaml')
+database_schema = operator.load_db_credentials('config/database_schema.yaml')
 database_name = target_db_config['DATABASE']
 print(database_name)
 
-def scrape_indeed():
-    indeed_instance.run(
-        scraper_config['base_config']['job_titles']
-        , scraper_config['base_config']['number_of_pages'] 
-        )
+def scrape_indeed(job_titles : list, number_of_pages: int = None):
+    for job_title in job_titles:
+        indeed_instance.run(
+            job_title, 
+            number_of_pages=number_of_pages
+            )
 
     indeed_df = indeed_instance.output_to_dataframe() 
 
@@ -95,10 +98,25 @@ def process_dataframes(s3_file_path : str):
         "fact_job_data": fact_table
     }
     return dataframe_dict
+
+def upload_dataframes(dataframe_dict : dict, target_engine : Engine, upload_condition : str):
+
+    for key, value in dataframe_dict.items():
+        print(key)
+        if "land" in key:
+            operator.send_data_to_database(value, target_engine, key, "replace", database_schema)
+        else:
+            operator.send_data_to_database(value, target_engine, key, upload_condition, database_schema)
+
+
 if __name__ == "__main__":
-    # scrape_indeed() 
-    # upload_to_s3('indeed_jobs.csv')
-    create_job_database() 
+    scrape_indeed(
+        scraper_config['base_config']['job_titles']
+        ,scraper_config['base_config']['number_of_pages']
+        ) 
+    upload_to_s3('indeed_jobs.csv')
+    target_db_engine = create_job_database() 
     dataframe_dictionary = process_dataframes(f'indeed/{current_date.year}/{current_date.month}/{current_date.day}/')
     land_job_data_table = dataframe_dictionary['land_job_data']
-    
+    upload_dataframes(dataframe_dictionary, target_db_engine, 'replace')
+    operator.execute_sql('apply_primary_foreign_keys.sql', target_db_engine)
