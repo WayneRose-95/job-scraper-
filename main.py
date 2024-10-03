@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import datetime 
 from src.data_processing import S3DataProcessing
 from src.data_processing import DataFrameManipulation
@@ -98,6 +99,18 @@ def process_dataframes(s3_file_path : str):
         "fact_job_data": fact_table
     }
     return dataframe_dict
+
+def database_table_name_check(dataframe_dict : dict, target_db_engine : Engine):
+
+    # Check if the table names are present already 
+    current_database_table_names = operator.list_db_tables(target_db_engine)
+    database_table_names_to_be_uploaded = list(dataframe_dict.keys())
+    # Comparing both lists. If they are the same, then call the process to append data to the dataframes
+    if Counter(current_database_table_names) == Counter(database_table_names_to_be_uploaded):
+        print("Tables are already present inside database. Upserting data.")
+        return True 
+    else: 
+        return False
 
 def upload_dataframes(dataframe_dict : dict, target_engine : Engine, upload_condition : str):
 
