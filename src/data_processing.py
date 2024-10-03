@@ -375,11 +375,36 @@ class DataFrameManipulation:
 
         return fact_job_data_df
     
-    #TODO: Should this method be inside this class? 
-    @staticmethod
-    def extract_from_url():
-        pass 
 
+    @staticmethod
+    def extract_from_url(url : str):
+        '''
+        Extracts the middle part of a URL using a regular expression
+        pattern.
+        
+        Parameters
+        ----------
+        url : str
+            The url of the website
+        
+        Returns
+        -------
+        extracted_text : str
+            extracted text from the middle part of the URL using the regular expression pattern
+            provided.
+        
+        '''
+
+        pattern = r'(?<=\.)[^.]+(?=\.)'
+        # use the following re pattern to extract the middle part of the url
+        result = re.search(pattern, url)
+        print(result)
+
+        if result:
+            extracted_text = result.group(0)
+            print(extracted_text)
+
+        return extracted_text
     
     @staticmethod
     def extract_min_salary(salary):
@@ -544,12 +569,12 @@ class DataFrameManipulation:
         Returns
         -------
             The function `is_competitive` is checking if the `salary` is either `NaN` or equal to the string
-            `'N/A'`. If the `salary` meets either of these conditions, the function 
-            
-            returns `True` if the `salary` is either `NaN` or equal to the string
-            `'N/A'`., indicating that the salary is considered competitive. 
-            
-            Otherwise, it returns `False`, indicating that the salary is not competitive. 
+        `'N/A'`. If the `salary` meets either of these conditions, the function 
+        
+        returns `True` if the `salary` is either `NaN` or equal to the string
+        `'N/A'`., indicating that the salary is considered competitive. 
+        
+        Otherwise, it returns `False`, indicating that the salary is not competitive.
         
         '''
         if pd.isna(salary) or salary == 'N/A':
