@@ -3,12 +3,27 @@ from sqlalchemy import inspect
 from sqlalchemy.engine import Engine
 from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import MetaData, Table, Column, VARCHAR, DATE, FLOAT, SMALLINT, BOOLEAN, TIME, NUMERIC, TIMESTAMP, INTEGER, UUID, DATETIME
+from pandas import DataFrame
+
 import yaml 
 
 class DatabaseOperations: 
 
     def __init__(self):
-        pass 
+        self.type_mapping =  {
+            "VARCHAR": VARCHAR,
+            "DATE": DATE,
+            "FLOAT": FLOAT,
+            "SMALLINT": SMALLINT,
+            "BOOLEAN": BOOLEAN,
+            "TIME": TIME,
+            "NUMERIC": NUMERIC,
+            "TIMESTAMP": TIMESTAMP,
+            "INTEGER": INTEGER,
+            "UUID": UUID, 
+            "DATETIME": DATETIME 
+        }
 
     def load_db_credentials(self, config_path : str):
         """
@@ -146,7 +161,7 @@ class DatabaseOperations:
             result = target_connection.execute(database_check_statement)
             return result 
 
-    def read_rds_table(self):
+    def read_rds_table(self, engine : Engine, table_name : str):
         pass 
 
     def upsert_table(self):
@@ -154,14 +169,56 @@ class DatabaseOperations:
 
 
 
-    def parse_column_type(self):
-        pass 
+    def parse_column_type(self, col_type : str):
+        # Split the desired column name by the first occurence of the '(' character
+        # NOTE: the *col_params will set everything else that is split to a list. 
+        col_type_name, *col_params = col_type.split('(')
+        # Strip the Whitespace from the column_name 
+        col_type_name = col_type_name.strip()
+        # For the col_params variable select the first element of the list,
+        # then remove the last character from the list. 
+        # Afterwards, apply the split method to split the rest of the string by ','s
+        # If the col_params variable is empty return an empty list
+        col_params = col_params[0][:-1].split(',') if col_params else []
+        # Map the variable to a SQLAlchemy Type
+        col_type_obj = self.type_mapping[col_type_name]
+        # If condition for if col_params is not empty
+        if col_params:
+            # convert each value in the col_param variable to an integer
+            col_type_obj = col_type_obj(*map(int, col_params))
+        return col_type_obj
 
-    def generate_table_schema(self):
-        pass 
+    def generate_table_schema(self, table_name : str, columns : dict):
+        # Create a MetaData() object
+        metadata = MetaData()
+        table_columns = []
+        # Iterate through the columns dictionary
+        for col_name, col_type in columns.items():
+            # In each iteration, call the parse_column_type function
+            col_type_obj = self.parse_column_type(col_type)
+            # Append the tuple to the list of table_columns
+            table_columns.append(Column(col_name, col_type_obj))
+        # Create a Table object based on the metadata and schema of the columns dictionary
+        table = Table(table_name, metadata, *table_columns)
 
-    def send_data_to_database(self):
-        pass 
+        # Print detailed schema information
+        print(f"Table: {table_name}")
+        for column in table.columns:
+            print(f"Column: {column.name}, Type: {column.type}")
+        
+        return table
+    
+    def send_data_to_database(self, dataframe : DataFrame, engine : Engine, table_name : str, condition: str, schema_config : dict):
+        try:
+            column_types = schema_config["schemas"]["tables"][table_name]
+            table_schema = self.generate_table_schema(table_name, column_types)
+            with engine.begin() as connection:
+                dataframe.to_sql(name=table_name, con=connection, if_exists=condition, index=False, dtype={col.name: col.type for col in table_schema.columns})
+                print(f'Successfully uploaded {table_name} to the database.')
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            raise e
+
 
     def execute_sql(self, sql_file_path : str, engine : Engine):
         sql_session = sessionmaker(bind=engine)
