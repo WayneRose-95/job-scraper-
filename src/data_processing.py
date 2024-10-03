@@ -295,22 +295,22 @@ class DataFrameManipulation:
         ----------
         df : pd.DataFrame
             Takes in several DataFrames as input parameters to build a fact
-            table. Here is a brief explanation of each parameter:
+            table. Below is a brief explanation of each parameter:
         job_title_df : pd.DataFrame
             The `job_title_df` parameter is a DataFrame containing information about job titles. This DataFrame
-            likely includes columns such as `job_title` and corresponding identifiers or codes for each job
+            includes columns such as `job_title` and corresponding identifiers or codes for each job
             title. This information is used to merge with the main DataFrame (`df`) to enrich the data with
-            additional details related to job
+            additional details related to job titles
         company_df : pd.DataFrame
             The `company_df` parameter in the `build_fact_table` function is a DataFrame containing information
             about companies. This DataFrame is used to merge with the main DataFrame (`df`) based on the
             `company_name` column to enrich the fact table with additional company information. The merging
-            process helps consolidate data from
+            process helps consolidate data from different company information
         location_df : pd.DataFrame
             The `location_df` parameter in the `build_fact_table` function is a DataFrame containing
             information about job locations. This DataFrame is used to merge location data with the main
             DataFrame `df` during the process of building a fact table for job data. The merging process
-            involves matching location information based on the
+            involves matching location information. 
         job_url_df : pd.DataFrame
             The `job_url_df` parameter in the `build_fact_table` function is a DataFrame containing information
             related to job URLs. This DataFrame is used to merge with the main DataFrame (`df`) to enrich the
@@ -318,7 +318,7 @@ class DataFrameManipulation:
         description_df : pd.DataFrame
             The `description_df` parameter in the `build_fact_table` function is a DataFrame containing job
             descriptions. This DataFrame is used to merge with other DataFrames such as `job_title_df`,
-            `company_df`, `location_df`, `job_url_df`, and `time_dimension_df` to build a
+            `company_df`, `location_df`, `job_url_df`, and `time_dimension_df` to build the rest of the fact table
         time_dimension_df : pd.DataFrame
             The `time_dimension_df` parameter in the `build_fact_table` function is a DataFrame containing
             time-related information such as dates, timestamps, and other time dimensions that are relevant to
