@@ -27,7 +27,7 @@ def scrape_indeed(job_titles : list, number_of_pages: int = None):
 
     indeed_df = indeed_instance.output_to_dataframe() 
 
-    indeed_df.to_csv('indeed_jobs.csv', index=False)
+    indeed_df.to_csv(scraper_config['output_file_name'], index=False)
     return indeed_df 
 
 def upload_to_s3(s3_file_name : str):
@@ -87,7 +87,15 @@ def process_dataframes(s3_file_path : str):
     
 
     # Building the fact table 
-    fact_table = dataframe_manipulation.build_fact_table(df, job_title_df, company_df, location_df, job_url_df, description_df, full_time_dimension_df)
+    fact_table = dataframe_manipulation.build_fact_table(
+        df, 
+        job_title_df, 
+        company_df, 
+        location_df, 
+        job_url_df, 
+        description_df, 
+        full_time_dimension_df
+        )
 
     dataframe_dict = {
         "land_job_data" : df,
@@ -140,17 +148,19 @@ def filter_dataframes(dataframe_dict : dict, target_engine : Engine, land_job_da
     
     
     # rebuilding the fact_table 
-    new_fact_job_data = dataframe_manipulation.build_fact_table(
-        land_job_data_df, 
-        new_job_title_df,
-        new_company_df,
-        new_location_df,
-        new_job_url_df,
-        new_description_df,
-        new_time_dimension_df
-    )
+    #TODO: Rebuilding the fact table does not need to be done here, since the code filters 
+    # intends to append to the dimension tables. 
+    # new_fact_job_data = dataframe_manipulation.build_fact_table(
+    #     land_job_data_df, 
+    #     new_job_title_df,
+    #     new_company_df,
+    #     new_location_df,
+    #     new_job_url_df,
+    #     new_description_df,
+    #     new_time_dimension_df
+    # )
 
-    dataframe_dict['fact_job_data'] = new_fact_job_data
+    # dataframe_dict['fact_job_data'] = new_fact_job_data
 
     return dataframe_dict
 
@@ -207,13 +217,13 @@ def upload_dataframes(dataframe_dict : dict, target_engine : Engine, upload_cond
 
 
 if __name__ == "__main__":
-    # scrape_indeed(
-    #     scraper_config['base_config']['job_titles']
-    #     ,scraper_config['base_config']['number_of_pages']
-    #     ) 
-    # upload_to_s3('indeed_jobs.csv')
+    scrape_indeed(
+        scraper_config['base_config']['job_titles']
+        ,scraper_config['base_config']['number_of_pages']
+        ) 
+    upload_to_s3(scraper_config['output_file_name'])
     target_db_engine = create_job_database() 
-    dataframe_dictionary = process_dataframes(f'indeed/{current_date.year}/{current_date.month}/{current_date.day}/')
+    dataframe_dictionary = process_dataframes(scraper_config['s3_file_path'])
     land_job_data_table = dataframe_dictionary['land_job_data']
 
     if database_table_name_check(dataframe_dictionary, target_db_engine) == True:
