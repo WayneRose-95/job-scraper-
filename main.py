@@ -172,6 +172,17 @@ def update_and_filter_dimension_tables(target_engine : Engine):
     operator.update_ids(target_engine, "job_description_id", "job_description", "dim_description")
     operator.reset_ids(target_engine, "job_description_id","dim_description")
 
+def retrieve_dimension_tables(dataframe_dict : dict, target_engine : Engine):
+
+    for key, value in dataframe_dict.items(): 
+        if "fact" in key:
+            continue
+        else:
+            rds_table = operator.read_rds_table(target_engine, key)
+            dataframe_dict[key] = rds_table
+    
+    return dataframe_dict
+
 def upload_dataframes(dataframe_dict : dict, target_engine : Engine, upload_condition : str, first_load=False):
 
     if first_load:
@@ -196,13 +207,36 @@ def upload_dataframes(dataframe_dict : dict, target_engine : Engine, upload_cond
 
 
 if __name__ == "__main__":
-    scrape_indeed(
-        scraper_config['base_config']['job_titles']
-        ,scraper_config['base_config']['number_of_pages']
-        ) 
-    upload_to_s3('indeed_jobs.csv')
+    # scrape_indeed(
+    #     scraper_config['base_config']['job_titles']
+    #     ,scraper_config['base_config']['number_of_pages']
+    #     ) 
+    # upload_to_s3('indeed_jobs.csv')
     target_db_engine = create_job_database() 
     dataframe_dictionary = process_dataframes(f'indeed/{current_date.year}/{current_date.month}/{current_date.day}/')
     land_job_data_table = dataframe_dictionary['land_job_data']
-    upload_dataframes(dataframe_dictionary, target_db_engine, 'replace')
-    operator.execute_sql('apply_primary_foreign_keys.sql', target_db_engine)
+
+    if database_table_name_check(dataframe_dictionary, target_db_engine) == True:
+        # Filter the current dimension tables. 
+        filtered_dataframe_dictionary = filter_dataframes(dataframe_dictionary, target_db_engine, land_job_data_table)
+        # Upload the filtered dimension tables 
+        dimension_table_uploads = upload_dataframes(filtered_dataframe_dictionary, target_db_engine, 'append')
+        # Afterwards, update the dimension tables, deleting duplicate records and resetting the id column of each one
+        update_and_filter_dimension_tables(target_db_engine) 
+        # Retrieve the current dimension tables, adding them to the dataframe_dictionary 
+        new_dataframe_dict = retrieve_dimension_tables(dataframe_dictionary, target_db_engine)
+        # Rebuild the fact table with the new dataframes 
+        new_fact_table = dataframe_manipulation.build_fact_table(
+            land_job_data_table, 
+            new_dataframe_dict['dim_job_title'],
+            new_dataframe_dict['dim_company'],
+            new_dataframe_dict['dim_location'],
+            new_dataframe_dict['dim_job_url'],
+            new_dataframe_dict['dim_description'],
+            new_dataframe_dict['dim_date']
+        )
+        fact_table_df = new_fact_table
+        operator.send_data_to_database(fact_table_df, target_db_engine, "fact_job_data", 'append', database_schema)
+    else:
+        upload_dataframes(dataframe_dictionary, target_db_engine, 'replace', first_load=True)
+        operator.execute_sql('apply_primary_foreign_keys.sql', target_db_engine)
