@@ -276,11 +276,11 @@ class GeneralScraper:
         try:
             sleep(uniform(1, 3))
             self.driver.get(url)
-            print(f"Successfully navigated to URL: {self.base_url}")
+            print(f"Successfully navigated to URL: {url}")
             sleep(uniform(2, 4))
         
         except Exception as e:
-            print(f"Error navigating to URL {self.base_url}: {e}")
+            print(f"Error navigating to URL {url}: {e}")
             raise e
 
     def click_button_on_page(self, button_xpath : str):
