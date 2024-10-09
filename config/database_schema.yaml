@@ -1,0 +1,67 @@
+schemas:
+  tables:
+    land_job_data:
+      job_title: VARCHAR(255)
+      company_name: VARCHAR(255)
+      location: VARCHAR(255)
+      salary_range: VARCHAR(255)
+      job_url: VARCHAR(2000)
+      job_description: VARCHAR(30000)
+      date_extracted: TIMESTAMP
+
+    dim_company:
+       company_name_id: INTEGER
+       company_name: VARCHAR(255)
+    
+    dim_description:
+       job_description_id : INTEGER
+       job_description: VARCHAR(30000)
+    
+    dim_job_title:
+       job_title_id: INTEGER
+       job_title: VARCHAR(255)
+    
+    dim_job_url: 
+       job_url_id: INTEGER
+       job_url: VARCHAR(2000)
+
+    dim_location:
+       location_id: INTEGER
+       location: VARCHAR(255)
+
+    dim_date:
+      date_extracted_id : INTEGER
+      date_extracted: TIMESTAMP
+      year: INTEGER 
+      month: INTEGER 
+      day: INTEGER
+      timestamp: TIME 
+      date: DATE
+      quarter: INTEGER
+      day_of_week: VARCHAR(20)
+      month_name: VARCHAR(20)
+      is_month_end: BOOLEAN
+      is_leap_year: BOOLEAN
+      is_month_start: BOOLEAN
+      is_quarter_start: BOOLEAN
+      is_quarter_end: BOOLEAN
+      date_uuid: UUID
+
+    fact_job_data:
+      unique_id: UUID
+      date_uuid: UUID
+      job_title_id: INTEGER
+      company_name_id: INTEGER
+      location_id: INTEGER
+      job_url_id: INTEGER
+      job_description_id: INTEGER
+      date_extracted_id: INTEGER
+      salary_range: VARCHAR(255)
+      min_salary: NUMERIC(8,2)
+      max_salary: NUMERIC(8,2)
+      full_time_flag: BOOLEAN
+      contract_flag: BOOLEAN
+      competitive_flag: BOOLEAN
+
+
+ 
