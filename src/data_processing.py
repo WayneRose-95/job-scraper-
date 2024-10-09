@@ -165,7 +165,7 @@ class DataFrameManipulation:
         '''
         number_of_objects = len(list_of_objects)
 
-        for element in number_of_objects:
+        for element in list_of_objects:
             raw_data = element.read().decode('utf-8')
 
         df = pd.read_csv(StringIO(raw_data), delimiter=',')
@@ -346,9 +346,6 @@ class DataFrameManipulation:
 
         description_merged_df = pd.merge(job_url_merged_df, description_df, how='left', left_on='job_description', right_on='job_description')
 
-        # Adding uuid column to fact table to act as primary key
-        description_merged_df['unique_id'] = [str(uuid4()) for _ in range(len(description_merged_df))]
-
         # Converting 'date_extracted' to datetime type
         description_merged_df['date_extracted'] = pd.to_datetime(description_merged_df['date_extracted'])
         time_dimension_df['date_extracted'] = pd.to_datetime(time_dimension_df['date_extracted'])
@@ -363,6 +360,9 @@ class DataFrameManipulation:
         fact_job_data_df['full_time_flag'] = fact_job_data_df['salary_range'].apply(lambda x: self.is_full_time(x))
         fact_job_data_df['contract_flag'] = fact_job_data_df['salary_range'].apply(lambda x: self.is_contract(x))
         fact_job_data_df['competitive_flag'] = fact_job_data_df['salary_range'].apply(lambda x: self.is_competitive(x))
+
+        # Adding uuid column to fact table to act as primary key
+        fact_job_data_df['unique_id'] = [str(uuid4()) for _ in range(len(fact_job_data_df))]
 
         # Selecting and assigning the column_order 
         fact_job_data_df_order = ['unique_id', 'date_uuid', 'job_title_id', 'company_name_id',
