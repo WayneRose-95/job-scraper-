@@ -1,6 +1,7 @@
 from collections import Counter
 from datetime import datetime 
 from pandas import DataFrame
+from pandas import Series
 from src.data_processing import S3DataProcessing
 from src.data_processing import DataFrameManipulation
 from src.database_operations import DatabaseOperations
@@ -69,6 +70,10 @@ def process_dataframes(s3_file_path : str):
     # Creating the location dimension table 
     location_df = dataframe_manipulation.build_dimension_table(df, 'location', ['location_id', 'location'])
 
+    # Adds the latitude and longitude columns to the location dataframe
+    location_df[['latitude', 'longitude']] = location_df['location'].apply(
+        lambda loc: Series(dataframe_manipulation.get_geo_co_ordinates(loc))
+    )
     # Creating the time dimension table
     time_dimension_df = dataframe_manipulation.build_dimension_table(df, 'date_extracted', ['date_extracted_id', 'date_extracted'])
 
@@ -217,11 +222,11 @@ def upload_dataframes(dataframe_dict : dict, target_engine : Engine, upload_cond
 
 
 if __name__ == "__main__":
-    scrape_indeed(
-        scraper_config['base_config']['job_titles']
-        ,scraper_config['base_config']['number_of_pages']
-        ) 
-    upload_to_s3(scraper_config['base_config']['output_file_name'])
+    # scrape_indeed(
+    #     scraper_config['base_config']['job_titles']
+    #     ,scraper_config['base_config']['number_of_pages']
+    #     ) 
+    # upload_to_s3(scraper_config['base_config']['output_file_name'])
     target_db_engine = create_job_database() 
     dataframe_dictionary = process_dataframes(scraper_config['base_config']['s3_file_path'])
     land_job_data_table = dataframe_dictionary['land_job_data']

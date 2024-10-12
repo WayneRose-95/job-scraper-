@@ -3,7 +3,7 @@ from sqlalchemy import inspect
 from sqlalchemy.engine import Engine
 from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import MetaData, Table, Column, VARCHAR, DATE, FLOAT, SMALLINT, BOOLEAN, TIME, NUMERIC, TIMESTAMP, INTEGER, UUID, DATETIME
+from sqlalchemy import MetaData, Table, Column, VARCHAR, DATE, FLOAT, SMALLINT, BOOLEAN, TIME, NUMERIC, TIMESTAMP, INTEGER, UUID, DATETIME, DECIMAL
 from pandas import DataFrame
 import pandas as pd
 
@@ -23,6 +23,7 @@ class DatabaseOperations:
             "TIMESTAMP": TIMESTAMP,
             "INTEGER": INTEGER,
             "UUID": UUID, 
+            "DECIMAL": DECIMAL,
             "DATETIME": DATETIME 
         }
 

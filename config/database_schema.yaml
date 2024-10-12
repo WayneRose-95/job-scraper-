@@ -28,8 +28,8 @@ schemas:
     dim_location:
        location_id: INTEGER
        location: VARCHAR(255)
-       latitude: FLOAT
-       longitude: FLOAT
+       latitude: DECIMAL(10,7)
+       longitude: DECIMAL(10,7)
 
     dim_date:
       date_extracted_id : INTEGER
