@@ -37,6 +37,8 @@ class IndeedScraper(GeneralScraper):
                     data[key] = self.driver.current_url
                 else:
                     data[key] = 'N/A'
+            elif key == 'website_name':
+                data[key] = value
             elif 'date' in key:
                 data[key] = datetime.today()
             else:

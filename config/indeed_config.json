@@ -24,7 +24,8 @@
                 "salary_range": "//*[@id='salaryInfoAndJobType']//span",
                 "job_url": ".//a[contains(@class, 'jcs-JobTitle')]",
                 "job_description": "//*[@id='jobDescriptionText']", 
-                "date_extracted": ""
+                "date_extracted": "",
+                "website_name": "indeed"
             }
         }
     }
