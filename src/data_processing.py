@@ -1,5 +1,6 @@
 from botocore.exceptions import ClientError
 from datetime import datetime
+from geopy.geocoders import Nominatim
 from io import StringIO
 from uuid import uuid4
 import boto3
@@ -374,6 +375,34 @@ class DataFrameManipulation:
         fact_job_data_df = fact_job_data_df[fact_job_data_df_order]
 
         return fact_job_data_df
+    
+    @staticmethod
+    def get_geo_co_ordinates(location : str):
+        '''
+        Takes a location string as input and returns its latitude and
+        longitude coordinates using the Nominatim geocoding service.
+        
+        Parameters
+        ----------
+        location : str
+            A string representing the location. 
+
+            The Nominatim geocoding service is used to retrieve the latitude and longitude coordinates of the provided
+            location. 
+
+        Returns
+        -------
+            A tuple containing the latitude and longitude of the given location. 
+            If the location is not found, it returns a tuple with None values for latitude and
+            longitude.
+
+        '''
+        geolocator = Nominatim(user_agent='location')
+        location = geolocator.geocode(location)
+        if location:
+            return location.latitude, location.longitude
+        else:
+            return None, None
     
 
     @staticmethod
