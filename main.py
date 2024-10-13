@@ -273,3 +273,4 @@ if __name__ == "__main__":
     else:
         upload_dataframes(dataframe_dictionary, target_db_engine, 'replace', first_load=True)
         operator.execute_sql('apply_primary_foreign_keys.sql', target_db_engine)
+        operator.execute_sql('create_views.sql', target_db_engine)
