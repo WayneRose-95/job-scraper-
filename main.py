@@ -89,6 +89,10 @@ def process_dataframes(s3_file_path : str):
             'is_quarter_start', 'is_quarter_end'
         ]
         )
+    # Creating website_table 
+    website_name_df = dataframe_manipulation.build_dimension_table(df, 'website_name', ['website_name_id', 'website_name'])
+    # Adding website url to the table
+    website_name_df['website_url'] = scraper_config['base_config']['url']
     
 
     # Building the fact table 
@@ -99,7 +103,8 @@ def process_dataframes(s3_file_path : str):
         location_df, 
         job_url_df, 
         description_df, 
-        full_time_dimension_df
+        full_time_dimension_df, 
+        website_name_df
         )
 
     dataframe_dict = {
@@ -110,6 +115,7 @@ def process_dataframes(s3_file_path : str):
         "dim_location": location_df,
         "dim_date": full_time_dimension_df,
         "dim_job_url": job_url_df,
+        "dim_website": website_name_df,
         "fact_job_data": fact_table
     }
     return dataframe_dict
@@ -155,17 +161,17 @@ def filter_dataframes(dataframe_dict : dict, target_engine : Engine, land_job_da
     # rebuilding the fact_table 
     #TODO: Rebuilding the fact table does not need to be done here, since the code filters 
     # intends to append to the dimension tables. 
-    new_fact_job_data = dataframe_manipulation.build_fact_table(
-        land_job_data_df, 
-        new_job_title_df,
-        new_company_df,
-        new_location_df,
-        new_job_url_df,
-        new_description_df,
-        new_time_dimension_df
-    )
+    # new_fact_job_data = dataframe_manipulation.build_fact_table(
+    #     land_job_data_df, 
+    #     new_job_title_df,
+    #     new_company_df,
+    #     new_location_df,
+    #     new_job_url_df,
+    #     new_description_df,
+    #     new_time_dimension_df
+    # )
 
-    dataframe_dict['fact_job_data'] = new_fact_job_data
+    # dataframe_dict['fact_job_data'] = new_fact_job_data
 
     return dataframe_dict
 
@@ -186,6 +192,14 @@ def update_and_filter_dimension_tables(target_engine : Engine):
     # for dim_description table 
     operator.update_ids(target_engine, "job_description_id", "job_description", "dim_description")
     operator.reset_ids(target_engine, "job_description_id","dim_description")
+
+    # for dim_company table 
+    operator.update_ids(target_engine, "company_name_id", "company_name", "dim_company")
+    operator.reset_ids(target_engine, "company_name_id", "dim_company")
+
+    # for dim_website table 
+    operator.update_ids(target_engine, "website_name_id", "website_name", "dim_website")
+    operator.reset_ids(target_engine, "website_name_id", "dim_website")
 
 def retrieve_dimension_tables(dataframe_dict : dict, target_engine : Engine):
 
@@ -215,6 +229,9 @@ def upload_dataframes(dataframe_dict : dict, target_engine : Engine, upload_cond
                 operator.send_data_to_database(value, target_engine, key, "replace", database_schema)
             # skip uploading the fact job data dataframe on second load create a seperate function to load the fact data. 
             elif "fact" in key:
+                continue
+            # skip uploading the dim_website table again to avoid an error. 
+            elif "website" in key:
                 continue
             else:
                 operator.send_data_to_database(value, target_engine, key, upload_condition, database_schema)
@@ -248,7 +265,8 @@ if __name__ == "__main__":
             new_dataframe_dict['dim_location'],
             new_dataframe_dict['dim_job_url'],
             new_dataframe_dict['dim_description'],
-            new_dataframe_dict['dim_date']
+            new_dataframe_dict['dim_date'], 
+            new_dataframe_dict['dim_website']
         )
         fact_table_df = new_fact_table
         operator.send_data_to_database(fact_table_df, target_db_engine, "fact_job_data", 'append', database_schema)

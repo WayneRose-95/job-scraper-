@@ -285,7 +285,8 @@ class DataFrameManipulation:
                          location_df : pd.DataFrame, 
                          job_url_df : pd.DataFrame, 
                          description_df : pd.DataFrame, 
-                         time_dimension_df : pd.DataFrame
+                         time_dimension_df : pd.DataFrame, 
+                         website_df : pd.DataFrame
                          ):
         
         '''
@@ -353,7 +354,9 @@ class DataFrameManipulation:
         
         print(description_merged_df.info())
         print(time_dimension_df.info())
-        fact_job_data_df = pd.merge(description_merged_df, time_dimension_df, on='date_extracted', how='left')
+        website_merged_df = pd.merge(description_merged_df, website_df, on='website_name', how='left')
+
+        fact_job_data_df = pd.merge(website_merged_df, time_dimension_df, on='date_extracted', how='left')
 
         # Applying staticmethods to the dataframe 
         fact_job_data_df['min_salary'] = fact_job_data_df['salary_range'].apply(lambda x: self.extract_min_salary(x))
@@ -367,7 +370,7 @@ class DataFrameManipulation:
 
         # Selecting and assigning the column_order 
         fact_job_data_df_order = ['unique_id', 'date_uuid', 'job_title_id', 'company_name_id',
-       'location_id', 'job_url_id', 'job_description_id', 'date_extracted_id', 'salary_range',
+       'location_id', 'job_url_id', 'job_description_id', 'date_extracted_id', 'website_name_id', 'salary_range',
        'min_salary', 'max_salary', 'full_time_flag', 'contract_flag',
        'competitive_flag'
             ]
