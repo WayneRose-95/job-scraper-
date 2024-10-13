@@ -10,7 +10,6 @@ import pandas as pd
 import yaml 
 
 class DatabaseOperations: 
-
     def __init__(self):
         self.type_mapping =  {
             "VARCHAR": VARCHAR,
@@ -31,17 +30,19 @@ class DatabaseOperations:
         """
         Method to load databae credentials from a .yaml file 
 
-        Parameters: 
+        Parameters
+        ----------- 
 
-        config_path : str 
+            config_path : str 
 
-        The file path to the configuration file
+                The file path to the configuration file
 
-        Returns: 
+        Returns
+        -------
 
-        config : dict 
+            config : dict 
 
-        A dictionary of database credentials 
+                A dictionary of database credentials 
         """
         try:
             with open(config_path, 'r') as file:
@@ -53,6 +54,33 @@ class DatabaseOperations:
          
 
     def connect(self, config_file : dict, connect_to_database=False, new_db_name=None):
+        """
+        Method to connect create a sqlalchemy Engine object 
+
+        Parameters
+        ----------
+            config_file (dict): 
+                A dictionary representing the credentials for the database 
+
+            connect_to_database (bool, optional): 
+                Optional argument to connect to a specific database. 
+                Defaults to False.
+                When False, the Engine will connect to the server itself 
+                When True, the Engine will connect to the specified database 
+
+            new_db_name (_type_, optional): 
+                The name of the database. 
+                Defaults to None.
+
+        Raises
+        ------
+            ValueError: 
+                If new_db_name is None and connect_to_database is set to True. 
+
+        Returns:
+            db_engine (Engine):
+                A sqlalchemy Engine object to interact with the either the database or the server
+        """
         DATABASE_TYPE = config_file['DATABASE_TYPE']
         DBAPI = config_file['DBAPI']
         USER = config_file['USER']
@@ -77,16 +105,18 @@ class DatabaseOperations:
         '''
         Method to list the current database tables inside the database 
 
-        Parameters: 
+        Parameters
+        ----------
 
         engine : Engine 
-        A sqlalchemy Engine object. 
+            A sqlalchemy Engine object. 
 
-        Returns: 
+        Returns
+        -------
 
-        database_tables : list 
+            database_tables : list 
 
-        A list of strings which represent the list of tables within the database. 
+                A list of strings which represent the list of tables within the database. 
         '''
         inspector = inspect(engine)
         database_tables = inspector.get_table_names()
@@ -97,18 +127,19 @@ class DatabaseOperations:
         """
         Method to create a database. 
 
-        Parameters: 
+        Parameters
+        ---------- 
 
-        engine : Engine 
+            engine : Engine 
         
-        A sqlalchemy Engine object 
+                A sqlalchemy Engine object 
 
-        database_name : str 
+            database_name : str 
 
-        The name of the database to be created
+                The name of the database to be created
 
-        If the database is not present on the server, it will be created. 
-        If the database is present, then it will be skipped. 
+                If the database is not present on the server, it will be created. 
+                If the database is present, then it will be skipped. 
         """
         with engine.connect() as database_engine:
             if database_engine:
@@ -137,15 +168,16 @@ class DatabaseOperations:
         """
         Method to check if a database is present on a postgres server. 
 
-        Parameters: 
+        Parameters
+        ----------
 
-        target_engine : Engine 
+            target_engine : Engine 
 
-        A sqlalchemy Engine object 
+                A sqlalchemy Engine object 
 
-        database_name : str 
+            database_name : str 
 
-        The name of the database 
+                The name of the database 
 
         """
         #TODO: Adjust the method for other database engines
@@ -170,21 +202,23 @@ class DatabaseOperations:
         Given an Engine object, the method will read a sql table
         into a pandas dataframe 
 
-        Parameters: 
+        Parameters
+        ----------
 
-        engine : Engine 
+            engine : Engine 
 
-        A SQLAlchemy Engine object 
+                A SQLAlchemy Engine object 
 
-        table_name : str 
+            table_name : str 
 
-        The name of the table within the database 
+                The name of the table within the database 
 
         Returns 
+        -------
 
-        rds_table : pd.DataFrame 
+            rds_table : pd.DataFrame 
 
-        A dataframe representing a table from the database
+                A dataframe representing a table from the database
         '''
         
         rds_table = pd.read_sql_table(table_name, engine)
@@ -195,23 +229,36 @@ class DatabaseOperations:
         """
         Method to upsert a table by comparing two dataframes. 
 
-        Parameters: 
+        Parameters
+        ----------
 
-        database_df : DataFrame 
+            database_df : DataFrame 
 
-        The current dataframe extracted from the database 
+                The current dataframe extracted from the database 
 
-        current_df : DataFrame 
+            current_df : DataFrame 
 
-        The dataframe to be compared with the dataframe extracted from the current database
+                The dataframe to be compared with the dataframe extracted from the current database
 
-        current_df_id_column_name : str
+            current_df_id_column_name : str
 
-        The id column name inside the current dataframe
+                The id column name inside the current dataframe
         
-        dimension_column_name : str
+            dimension_column_name : str
 
-        The column name for the dimension table 
+                The column name for the dimension table 
+
+        Returns 
+        -------
+
+            current_df : DataFrame 
+                The dataframe to be compared with the dataframe extracted from the current database. 
+                If the total number of records in the current dataframe matches with the length of the 
+                combined dataframe.  
+
+            new_records_df : DataFrame 
+                A dataframe containing filtered records from the new table
+
 
         """
         # Add the lengths of both dataframes together
@@ -248,16 +295,19 @@ class DatabaseOperations:
         """
         Method to parse a column type from a string 
 
-        Parameters: 
+        Parameters
+        ---------- 
 
-        column_type : str 
+            column_type : str 
 
-        The type of column in a string format 
+                The type of column in a string format 
 
-        Returns 
-        column_type_object : dict 
+        Returns
+        -------
 
-        A dictionary which matches the column type to an integer 
+            column_type_object : dict 
+
+                A dictionary which matches the column type to an integer 
 
         """
         # Split the desired column name by the first occurence of the '(' character
@@ -283,21 +333,23 @@ class DatabaseOperations:
         Method to generate the schema for a desired table name
         Utilising SQLAlchemy's ORM syntax 
 
-        Parameters: 
+        Parameters
+        ---------- 
 
-        table_name : str 
+            table_name : str 
 
-        The name of the table. 
+                The name of the table. 
 
-        columns : dict 
+            columns : dict 
 
-        A dictionary containing key-value pairs for each of the columns
+                A dictionary containing key-value pairs for each of the columns
 
-        Returns: 
+        Returns
+        -------
 
-        table : Table 
+            table : Table 
 
-        A Table object representing the table to be created inside the database
+                A Table object representing the table to be created inside the database
         """
         # Create a MetaData() object
         metadata = MetaData()
@@ -322,29 +374,34 @@ class DatabaseOperations:
         """
         Method to send data to a database given a pandas DataFrame object 
 
-        Parameters: 
+        Parameters
+        ----------
 
-        dataframe : DataFrame 
+            dataframe : DataFrame 
 
-        A pandas DataFrame object 
+                A pandas DataFrame object 
 
-        engine : Engine 
+            engine : Engine 
 
-        A sqlalchemy Engine object 
+                A sqlalchemy Engine object 
 
-        table_name : str 
+            table_name : str 
 
-        The name of the table to be uploaded 
+                The name of the table to be uploaded 
 
-        condition : str 
+            condition : str 
 
-        The table condition for the table to be uploaded. 
-        Options are 'append', 'replace' and 'fail' 
+                The table condition for the table to be uploaded. 
+                Options are 'append', 'replace' and 'fail' 
 
-        schema_config : dict 
+            schema_config : dict 
 
-        A dictionary containing the configuration of the schema for the table
-        Found within a configuration file
+                A dictionary containing the configuration of the schema for the table
+                Found within a configuration file
+        
+        Returns
+        ------- 
+            None 
         """
         try:
             column_types = schema_config["schemas"]["tables"][table_name]
@@ -389,23 +446,28 @@ class DatabaseOperations:
         """
         Method to update the id column within a database
 
-        Parameters: 
+        Parameters
+        ----------
 
-        engine : Engine 
+            engine : Engine 
 
-        A sqlalchemy Engine object 
+                A sqlalchemy Engine object 
 
-        id_column_name : str 
+            id_column_name : str 
         
-        The name of the id column 
+                The name of the id column 
 
-        column_name : str 
+            column_name : str 
 
-        The name of a column inside the database
+                The name of a column inside the database
 
-        table_name : str 
+            table_name : str 
 
-        The name of the table inside the database 
+                The name of the table inside the database 
+
+        Returns 
+        ------- 
+            None 
 
         """
         sql_session = sessionmaker(bind=engine)
@@ -431,19 +493,24 @@ class DatabaseOperations:
         """
         Method to update the id column within a database
 
-        Parameters: 
+        Parameters
+        ---------- 
 
-        engine : Engine 
+            engine : Engine 
 
-        A sqlalchemy Engine object 
+                A sqlalchemy Engine object 
 
-        id_column_name : str 
+            id_column_name : str 
         
-        The name of the id column 
+                The name of the id column 
 
-        table_name : str 
+            table_name : str 
 
-        The name of the table inside the database 
+                The name of the table inside the database 
+
+        Returns 
+        ------- 
+            None
 
         """
         sql_session = sessionmaker(bind=engine)

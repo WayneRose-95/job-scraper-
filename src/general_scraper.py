@@ -26,9 +26,37 @@ class GeneralScraper:
     '''
     def __init__(self, driver_config_file : str, file_type : str = 'yaml', website_options=False):
         """
-        Attributes
+        initializes a Selenium webdriver object based on the driver configuration file and
+        optional website options.
+        
+        Parameters
+        ----------
+        driver_config_file : str
+            a string that represents the file path to the configuration file that contains settings for the driver. 
+            This file is used to configure the Selenium webdriver object that will be used in the code.
 
-        self.driver : takes in a new instance of the selenium webdriver object 
+        file_type : str, optional
+            the type of the driver configuration file being passed. 
+            By default, it is set to 'yaml'
+
+        website_options, optional
+            a boolean flag that indicates whether additional options specific to a website should be considered during the initialization
+        of the object. 
+        If `website_options` is set to `True`, the code will call the `select_options` method. 
+        
+    
+    
+        Attributes
+        ----------
+
+        self.driver : webdriver 
+            takes in a new instance of the selenium webdriver object 
+        
+        self.driver_config : dict 
+            A dictionary containing credentials for the webdriver 
+
+        self.website_options : dict 
+            A dictionary containing credentials for the website options 
 
         """
         self.driver_config = self.load_config_file(driver_config_file, file_type)
@@ -46,23 +74,25 @@ class GeneralScraper:
         Method to load in a configuration file to 
         select the type of selenium webdriver object to use
 
-        Parameters: 
+        Parameters
+        ----------
 
-        config_path : str 
+            config_path : str 
 
-        The file path to the configuration file 
+                The file path to the configuration file 
 
-        file_type : str 
+            file_type : str 
 
-        The file type of the configuration path 
+                The file type of the configuration path 
 
-        Returns: 
+        Returns
+        ------- 
 
-        config : dict 
+            config : dict 
 
-        A dictionary of key-value pairs for the configuration file. 
+                A dictionary of key-value pairs for the configuration file. 
 
-        If the file is not available a FileNotFoundError will be raised
+                If the file is not available a FileNotFoundError will be raised
         """
         if file_type == 'json':
             try:
@@ -88,9 +118,10 @@ class GeneralScraper:
         '''
         Selects a driver based on what is passed into the driver_config.yaml file 
 
-        Returns: 
-        self.driver : WebDriver 
-        A selenium WebDriver object
+        Returns
+        ------- 
+            self.driver : WebDriver 
+                A selenium WebDriver object
         '''
         if self.driver_type == 'stealth_driver':
             self.driver = self.setup_stealth_driver()
@@ -108,7 +139,17 @@ class GeneralScraper:
             raise ValueError('Invalid driver selection only stealth_driver, undetected_stealth_driver and setup_driver are valid')
 
     def select_options(self):
-        '''Selects options based on the driver selected from the driver_config.yaml file'''
+        '''
+        Selects options based on the driver selected from the .yaml file
+
+        Returns 
+        -------
+            options : ChromeOptions 
+
+                Depending on what the contents of the configuration file. 
+                ChromeOptions are generated for each variant of selenium webdriver. 
+        
+        '''
 
         if self.driver_type == 'undetected_stealth_driver':
             options = uc.ChromeOptions()
@@ -146,9 +187,10 @@ class GeneralScraper:
         '''
         Sets up an undetected stealth driver using the undetected-chrome package
 
-        Returns: 
-        driver : WebDriver 
-        A selenium WebDriver object
+        Returns
+        -------
+            driver : WebDriver 
+                A selenium WebDriver object
         '''
         
         if self.website_options:
@@ -197,10 +239,11 @@ class GeneralScraper:
         if the website_options argument is marked as False, then no ChromeOptions 
         will be used. 
 
-        Returns: 
-        Chrome() : WebDriver
+        Returns
+        -------
+            Chrome() : WebDriver
 
-        A selenium WebDriver object. 
+            A selenium WebDriver object. 
         """
         if self.website_options:
             ua = UserAgent(browsers=[self.driver_config['setup_driver']['browser']]) 
@@ -219,9 +262,10 @@ class GeneralScraper:
 
         Sets up an undetected stealth driver using the selenium-stealth package
 
-        Returns: 
-        driver : WebDriver 
-        A selenium WebDriver object
+        Returns
+        ------- 
+            driver : WebDriver 
+                A selenium WebDriver object
 
         '''
 
@@ -266,11 +310,16 @@ class GeneralScraper:
         '''
         Lands the first page on a website given a url. 
 
-        Parameters: 
+        Parameters
+        ----------
 
-        url : str 
+            url : str 
 
-        The url of the website 
+                The url of the website 
+
+        Returns
+        ------- 
+            None 
 
         '''
         try:
@@ -287,16 +336,19 @@ class GeneralScraper:
         '''
         Method to click a button on a webpage 
 
-        Parameters: 
+        Parameters
+        ----------
 
-        button_xpath : str 
+            button_xpath : str 
 
-        A string representing a button element on a webpage 
+                A string representing a button element on a webpage 
 
-        Returns: button_element : WebElement 
+        Returns
+        ------- 
+            button_element : WebElement 
 
-        A Selenium Webdriver WebElement representing the button 
-        on the webpage. 
+                A Selenium Webdriver WebElement representing the button 
+                on the webpage. 
 
         '''
         try:
@@ -319,19 +371,24 @@ class GeneralScraper:
         """
         Method to interact with the search bar on the webpage 
         
-        Parameters: 
+        Parameters
+        ---------- 
 
-        search_bar_xpath : str 
+            search_bar_xpath : str 
 
-        A string representing the search bar web element
+                A string representing the search bar web element
 
-        search_bar_text : str 
+            search_bar_text : str 
 
-        The text to input 
+                The text to input 
         
-        search_bar_button_xpath : str = None
+            search_bar_button_xpath : str = None
 
-        A string representing the search button on the website 
+                A string representing the search button on the website
+
+        Returns 
+        -------
+            None
 
         """
         # Click the search bar on the webpage 
@@ -358,9 +415,12 @@ class GeneralScraper:
         """
         Waits until a specified element is present on the page or until a timeout is reached.
 
-        Parameters:
-        - xpath (str): The XPath of the element to wait for.
-        - timeout (int, optional): The number of seconds to wait before timing out. Defaults to 30 seconds.
+        Parameters
+        ----------
+            xpath (str): 
+                The XPath of the element to wait for.
+            timeout (int, optional): 
+                The number of seconds to wait before timing out. Defaults to 30 seconds.
         
         Prints a message indicating whether the element was successfully located or if a timeout occurred.
         """
@@ -375,13 +435,23 @@ class GeneralScraper:
         """
         Clicks on an element (pop-ups or dialog boxes) specified by its XPath if it is present and clickable.
 
-        Parameters:
-        - element_xpath (str): The XPath of the element to be dismissed.
-        - element_description (str): The type of element that is being dismissed.
+        If the element is clickable, it is clicked and dismissed. 
+        
+        If the element is not found within the timeout period, a message is printed. 
+        
+        If an unexpected error occurs, it is caught and a message is printed with the error details.
 
-        If the element is clickable, it is clicked and dismissed. If the element is not
-        found within the timeout period, a message is printed. If an unexpected error occurs,
-        it is caught and a message is printed with the error details.
+        Parameters
+        ----------
+        element_xpath (str): 
+            The XPath of the element to be dismissed.
+
+        element_description (str): 
+            The type of element that is being dismissed.
+
+        Returns:
+            None 
+      
         """
         try:
             WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.XPATH, element_xpath)))
@@ -399,6 +469,11 @@ class GeneralScraper:
         Given an xpath, navigates to the next page on a website. 
 
         If the element is not present the pagination will stop. 
+
+        Parameters
+        ----------
+            next_page_xpath : str 
+                A string representing a webelement for the next page of the website
         '''
         try:
             next_page_button = self.click_button_on_page(next_page_xpath)
@@ -414,13 +489,18 @@ class GeneralScraper:
         """
         Attempts to extract an attribute from an element located by XPath within a given context.
 
-        Parameters:
-        - context (WebDriver or WebElement): The context within which to find the element.
-        - xpath (str): The XPath to locate the element.
-        - attribute (str): The attribute to retrieve from the element. Defaults to "textContent".
+        Parameters
+        ----------
+        context (WebDriver or WebElement): 
+            The context within which to find the element.
+        xpath (str): 
+            The XPath to locate the element.
+        attribute (str): 
+            The attribute to retrieve from the element. Defaults to "textContent".
 
-        Returns:
-        - str: The extracted attribute value or "N/A" if the element is not found.
+        Returns
+        -------
+            str: The extracted attribute value or "N/A" if the element is not found.
         """
         try:
             element = context.find_element(By.XPATH, xpath)
@@ -431,10 +511,13 @@ class GeneralScraper:
 
     def scroll_to_window(self, web_element : WebElement):
         '''
-        Scrolls down the webpage into a set position 
+        Scrolls down the webpage into a set position. 
+        
         The position selected is based on the location of a web_element.  
 
-        Returns : None 
+        Returns
+        ------ 
+            None 
         '''
         self.driver.execute_script("arguments[0].scrollIntoView();", web_element)
 

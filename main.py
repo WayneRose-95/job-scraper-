@@ -20,6 +20,25 @@ database_name = target_db_config['DATABASE']
 print(database_name)
 
 def scrape_indeed(job_titles : list, number_of_pages: int = None):
+    """
+    Function to extract job information from indeed. 
+
+    Parameters
+    ----------
+        job_titles (list): 
+            A list of job titles. 
+            Job titles are read in from the indeed_config file 
+
+        number_of_pages (int, optional): 
+            The number of pages to scrape per each job title. 
+            If the number of pages is None, then the entire website section will be scraped 
+            Defaults to None.
+
+    Returns
+    -------
+        indeed_df : DataFrame
+            A dataframe representing data extracted from the website
+    """
     for job_title in job_titles:
         indeed_instance.run(
             job_title, 
@@ -32,6 +51,20 @@ def scrape_indeed(job_titles : list, number_of_pages: int = None):
     return indeed_df 
 
 def upload_to_s3(s3_file_name : str):
+    """
+    Function to upload data to AWS S3 given a file name 
+
+    End-users must have an AWS IAM User with S3 permissions
+
+    Parameters
+    ----------
+        s3_file_name : str
+            The name of the file to send to AWS S3
+
+    Returns 
+    -------
+        None 
+    """
     job_website_name = dataframe_manipulation.extract_from_url(indeed_instance.base_url)
 
     # Create the file directory 
@@ -42,6 +75,13 @@ def upload_to_s3(s3_file_name : str):
     data_processor.upload_file_to_s3(s3_file_name, s3_object_name, file_directory)
 
 def create_job_database():
+    """
+    Function to create a database to store information about jobs
+
+    Returns:
+        target_database_engine : Engine
+            A sqlalchemy Engine object representing the target database
+    """
     target_engine = operator.connect(target_db_config, new_db_name=database_name)
     # Create the database
     database = operator.create_database(target_engine, database_name)
@@ -50,6 +90,19 @@ def create_job_database():
     return target_database_engine 
     
 def process_dataframes(s3_file_path : str):
+    """
+    Function to process dataframes from an S3 bucket
+
+    Parameters
+    ----------
+        s3_file_path : str 
+            A string representing a file path to the S3 Bucket 
+
+    Returns:
+        dataframe_dict: 
+            A dictionary containing dataframes where the keys represent table names and the
+            values are the corresponding dataframes.
+    """
     s3_objects = data_processor.list_objects(s3_file_path)
     csv_files = data_processor.read_objects_from_s3(s3_objects, 'csv')
 
@@ -121,6 +174,24 @@ def process_dataframes(s3_file_path : str):
     return dataframe_dict
 
 def database_table_name_check(dataframe_dict : dict, target_db_engine : Engine):
+    """
+    Function to check if tables are present inside a database
+
+    Parameters
+    ----------
+        dataframe_dict (dict): 
+            A dictionary containing dataframes where the keys represent table names and the
+            values are the corresponding dataframes.
+
+        target_db_engine (Engine):
+            A sqlalchemy Engine object for the target database. 
+
+    Returns:
+        bool: 
+            True if the the number of tables inside the database are the same as inside the dataframe_dict
+
+            False otherwise 
+    """
 
     # Check if the table names are present already 
     current_database_table_names = operator.list_db_tables(target_db_engine)
@@ -133,6 +204,27 @@ def database_table_name_check(dataframe_dict : dict, target_db_engine : Engine):
         return False
     
 def filter_dataframes(dataframe_dict : dict, target_engine : Engine, land_job_data_df : DataFrame):
+    """
+    Function to filter dataframes. 
+
+    Parameters
+    ----------
+        dataframe_dict (dict): 
+            A dictionary containing dataframes where the keys represent table names and the
+            values are the corresponding dataframes.
+
+        target_engine (Engine): 
+            A sqlalchemy Engine object for the target database.
+
+        land_job_data_df (DataFrame): 
+            A dataframe representing the land_job_data dataframe
+
+    Returns
+    -------
+        dataframe_dict : dict 
+            a dictionary containing dataframes where the keys represent table names and the
+            values are the corresponding dataframes.
+    """
     # Where dataframe_dict represents a dictionary of dataframes to upload
 
     current_location_df = operator.read_rds_table(target_engine, "dim_location")
@@ -176,6 +268,19 @@ def filter_dataframes(dataframe_dict : dict, target_engine : Engine, land_job_da
     return dataframe_dict
 
 def update_and_filter_dimension_tables(target_engine : Engine): 
+    '''
+    Function to update and filter the dimension tables 
+
+    Parameters
+    ---------- 
+        target_engine : Engine 
+            A sqlalchemy engine object pointing to the target database 
+    
+    Returns
+    -------
+        None 
+
+    '''
 
     # for dim_job_title table 
     operator.update_ids(target_engine, "job_title_id", "job_title", "dim_job_title")
@@ -202,7 +307,24 @@ def update_and_filter_dimension_tables(target_engine : Engine):
     operator.reset_ids(target_engine, "website_name_id", "dim_website")
 
 def retrieve_dimension_tables(dataframe_dict : dict, target_engine : Engine):
+    '''
+    The function retrieves dimension tables from a dictionary of dataframes using a specified target
+    engine.
+    
+    Parameters
+    ----------
+    dataframe_dict : dict
+        a dictionary containing dataframes where the keys represent table names and the
+        values are the corresponding dataframes.
 
+    target_engine : Engine
+         A sqlalchemy engine object pointing to the target database 
+
+    Returns
+    -------
+        A dictionary containing dimension tables retrieved from the target engine.
+    
+    '''
     for key, value in dataframe_dict.items(): 
         if "fact" in key:
             continue
@@ -213,6 +335,32 @@ def retrieve_dimension_tables(dataframe_dict : dict, target_engine : Engine):
     return dataframe_dict
 
 def upload_dataframes(dataframe_dict : dict, target_engine : Engine, upload_condition : str, first_load=False):
+    '''
+    The function `upload_dataframes` uploads dataframes to a database engine based on specified
+    conditions, with an option to skip uploading certain dataframes on subsequent loads.
+    
+    Parameters
+    ----------
+    dataframe_dict : dict
+        A dictionary containing DataFrames where the keys represent the
+        names of the DataFrames and the values are the DataFrames themselves.
+
+    target_engine : Engine
+        A sqlalchemy engine object pointing to the target database 
+
+    upload_condition : str
+        A string to specify how the data should be uploaded to the target database. 
+        Viable options are "append", "replace" and "fail"
+
+    first_load, optional
+        A boolean flag that indicates whether it is the first time data is being uploaded to the target database. 
+        If `first_load` is set to `True`, the function will upload all dataframes in the `dataframe_dict`
+
+    Returns
+    ------- 
+        None 
+    
+    '''
 
     if first_load:
         for key, value in dataframe_dict.items():
