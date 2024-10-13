@@ -11,3 +11,5 @@ undetected-chromedriver==3.5.5
 selenium-stealth==1.0.6
 reportlab==4.2.0
 PyYAML==6.0.1
+geopy==2.4.1
+ipykernel==6.29.4
