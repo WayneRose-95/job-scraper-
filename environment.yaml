@@ -5,7 +5,7 @@ dependencies:
   - python=3.11.0
   - pandas=2.2.1
   - pip=23.3.1
-  pip:
+  - pip:
     - pandas==2.2.1
     - selenium==4.19.0
     - webdriver-manager==4.0.1
