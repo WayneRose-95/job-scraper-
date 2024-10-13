@@ -28,6 +28,8 @@ schemas:
     dim_location:
        location_id: INTEGER
        location: VARCHAR(255)
+       latitude: DECIMAL(10,7)
+       longitude: DECIMAL(10,7)
 
     dim_date:
       date_extracted_id : INTEGER
@@ -46,6 +48,11 @@ schemas:
       is_quarter_start: BOOLEAN
       is_quarter_end: BOOLEAN
       date_uuid: UUID
+      
+    dim_website:
+      website_name_id: INTEGER
+      website_name: VARCHAR(50)
+      website_url: VARCHAR(255)
 
     fact_job_data:
       unique_id: UUID

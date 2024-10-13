@@ -2,9 +2,9 @@
     "base_config": {
         "url": "https://uk.indeed.com/",
         "number_of_pages": 2,
-        "job_titles": ["Data Engineer", "Data Analyst"],
+        "job_titles": ["Data Engineer", "Data Analyst", "Cloud Engineer"],
         "output_file_name": "indeed_jobs.csv",
-        "s3_file_path": "indeed/2024/10/4/",
+        "s3_file_path": "indeed/2024/10/13/",
         "cookies_path": "//*[@id='onetrust-reject-all-handler']",
         "popup_path": "//*[@id='mosaic-desktopserpjapopup']/div[1]/button",
         "next_page_xpath": "//a[@data-testid='pagination-page-next']"
@@ -24,7 +24,8 @@
                 "salary_range": "//*[@id='salaryInfoAndJobType']//span",
                 "job_url": ".//a[contains(@class, 'jcs-JobTitle')]",
                 "job_description": "//*[@id='jobDescriptionText']", 
-                "date_extracted": ""
+                "date_extracted": "",
+                "website_name": "indeed"
             }
         }
     }

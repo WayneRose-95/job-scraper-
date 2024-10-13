@@ -1,5 +1,6 @@
 from botocore.exceptions import ClientError
 from datetime import datetime
+from geopy.geocoders import Nominatim
 from io import StringIO
 from uuid import uuid4
 import boto3
@@ -284,7 +285,8 @@ class DataFrameManipulation:
                          location_df : pd.DataFrame, 
                          job_url_df : pd.DataFrame, 
                          description_df : pd.DataFrame, 
-                         time_dimension_df : pd.DataFrame
+                         time_dimension_df : pd.DataFrame, 
+                         website_df : pd.DataFrame
                          ):
         
         '''
@@ -352,7 +354,9 @@ class DataFrameManipulation:
         
         print(description_merged_df.info())
         print(time_dimension_df.info())
-        fact_job_data_df = pd.merge(description_merged_df, time_dimension_df, on='date_extracted', how='left')
+        website_merged_df = pd.merge(description_merged_df, website_df, on='website_name', how='left')
+
+        fact_job_data_df = pd.merge(website_merged_df, time_dimension_df, on='date_extracted', how='left')
 
         # Applying staticmethods to the dataframe 
         fact_job_data_df['min_salary'] = fact_job_data_df['salary_range'].apply(lambda x: self.extract_min_salary(x))
@@ -366,7 +370,7 @@ class DataFrameManipulation:
 
         # Selecting and assigning the column_order 
         fact_job_data_df_order = ['unique_id', 'date_uuid', 'job_title_id', 'company_name_id',
-       'location_id', 'job_url_id', 'job_description_id', 'date_extracted_id', 'salary_range',
+       'location_id', 'job_url_id', 'job_description_id', 'date_extracted_id', 'website_name_id', 'salary_range',
        'min_salary', 'max_salary', 'full_time_flag', 'contract_flag',
        'competitive_flag'
             ]
@@ -374,6 +378,34 @@ class DataFrameManipulation:
         fact_job_data_df = fact_job_data_df[fact_job_data_df_order]
 
         return fact_job_data_df
+    
+    @staticmethod
+    def get_geo_co_ordinates(location : str):
+        '''
+        Takes a location string as input and returns its latitude and
+        longitude coordinates using the Nominatim geocoding service.
+        
+        Parameters
+        ----------
+        location : str
+            A string representing the location. 
+
+            The Nominatim geocoding service is used to retrieve the latitude and longitude coordinates of the provided
+            location. 
+
+        Returns
+        -------
+            A tuple containing the latitude and longitude of the given location. 
+            If the location is not found, it returns a tuple with None values for latitude and
+            longitude.
+
+        '''
+        geolocator = Nominatim(user_agent='location')
+        location = geolocator.geocode(location)
+        if location:
+            return location.latitude, location.longitude
+        else:
+            return None, None
     
 
     @staticmethod
