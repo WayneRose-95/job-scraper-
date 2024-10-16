@@ -1,6 +1,10 @@
 from src.general_scraper import GeneralScraper
 from datetime import datetime
 from random import uniform 
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 from time import sleep 
 
 class CVLibraryScraper(GeneralScraper):
@@ -18,10 +22,25 @@ class CVLibraryScraper(GeneralScraper):
             file_type 
         )
 
-    def bypass_shadow_root(self, shadow_root_script, container): 
+    def bypass_shadow_root(self, shadow_root_script, element_description : str): 
+        
+        try:
+            container_element = self.driver.find_element(By.CSS_SELECTOR, self.scraper_config['jobs']['dismiss_element']['accept_cookies_container'])
+
+            accept_button = self.driver.execute_script(shadow_root_script, container_element)
+            if accept_button: 
+                accept_button.click() 
+                sleep(uniform(0.5, 1.5))
+                print(f"{element_description} dismissed.")
+        except TimeoutException:
+            print(f"No {element_description} found to dismiss.")
+        except Exception as e:
+            print(f"Error dismissing {element_description}: {e}")
+
+
         pass 
 
-    def extract_data_from_page(self, webpage_config_dict : dict):
+    def extract_data_from_webpage(self, webpage_config_dict : dict):
 
         sleep(uniform(2, 4))
         data = {}
