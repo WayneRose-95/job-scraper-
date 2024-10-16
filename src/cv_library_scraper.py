@@ -7,7 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 from time import sleep 
 
-class CVLibraryScraper(GeneralScraper):
+class selfLibraryScraper(GeneralScraper):
 
     def __init__(self, base_url : str, scraper_config_filename : str, driver_config_file : str, file_type : str = 'yaml', website_options=False):
         super().__init__(driver_config_file, file_type, website_options=website_options) 
@@ -62,4 +62,46 @@ class CVLibraryScraper(GeneralScraper):
                 data[key] = self.extract_element(self.driver, value)
 
         return data
+    
+    def process_cv_library_job_links(self):
+        job_url_list = []
+        number_of_pages = self.scraper_config['base_config']['number_of_pages']
+        count = 0 
+
+        while count < number_of_pages:
+            try:
+                # Refetch job cards for each page iteration
+                list_of_job_cards = WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_all_elements_located((By.XPATH, self.scraper_config['jobs']['start_extraction']['extract_data']['main_container']))
+                )
+                for job_card in list_of_job_cards:
+                    try:
+                        url_element = job_card.find_element(By.XPATH, self.scraper_config['jobs']['start_extraction']['extract_data']['job_url'])
+                        url = url_element.get_attribute('href')
+                        job_url_list.append(url)
+                        self.scroll_to_window(job_card)
+                        sleep(uniform(1, 5))
+                    except StaleElementReferenceException:
+                        # If the job_card becomes stale, refetch the URL element
+                        url_element = WebDriverWait(self.driver, 5).until(
+                            EC.presence_of_element_located((By.XPATH, self.scraper_config['jobs']['start_extraction']['extract_data']['job_url']))
+                        )
+                        url = url_element.get_attribute('href')
+                        job_url_list.append(url)
+                        self.scroll_to_window(job_card)
+                        sleep(uniform(1, 5))
+                        
+                # Locate and click the 'next' button for pagination
+                sleep(2)
+                next_page = self.click_button_on_page(self.scraper_config['base_config']['next_page_xpath'])
+                
+                if not next_page:
+                    break
+                count += 1
+                
+            except StaleElementReferenceException:
+                self.driver.refresh()  
+                sleep(3)
+
+        print(job_url_list)
 
