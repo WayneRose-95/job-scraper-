@@ -69,20 +69,21 @@ class ReedScraper(GeneralScraper):
         '''
     pass 
 
-    def process_reed_job_links(self, config : dict):
+    def process_reed_job_links(self):
+
         list_of_urls = []
-        number_of_pages = config['base_config']['number_of_pages']
+        number_of_pages = self.scraper_config['base_config']['number_of_pages']
         count = 0 
 
         while count < number_of_pages:
             try:
                 # Refetch job cards for each page iteration
                 list_of_job_cards = WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_all_elements_located((By.XPATH, config['jobs']['start_extraction']['extract_data']['main_container']))
+                    EC.presence_of_all_elements_located((By.XPATH, self.scraper_config['jobs']['start_extraction']['extract_data']['main_container']))
                 )
                 for job_card in list_of_job_cards:
                     try:
-                        url_element = job_card.find_element(By.XPATH, config['jobs']['start_extraction']['extract_data']['job_url'])
+                        url_element = job_card.find_element(By.XPATH, self.scraper_config['jobs']['start_extraction']['extract_data']['job_url'])
                         url = url_element.get_attribute('href')
                         list_of_urls.append(url)
                         self.scroll_to_window(job_card)
@@ -90,7 +91,7 @@ class ReedScraper(GeneralScraper):
                     except StaleElementReferenceException:
                         # If the job_card becomes stale, refetch the URL element
                         url_element = WebDriverWait(self.driver, 5).until(
-                            EC.presence_of_element_located((By.XPATH, config['jobs']['start_extraction']['extract_data']['job_url']))
+                            EC.presence_of_element_located((By.XPATH, self.scraper_config['jobs']['start_extraction']['extract_data']['job_url']))
                         )
                         url = url_element.get_attribute('href')
                         list_of_urls.append(url)
@@ -98,10 +99,11 @@ class ReedScraper(GeneralScraper):
                         sleep(uniform(1, 5))
                         
                 # Locate and click the 'next' button for pagination
-                next_page_element = self.driver.find_element(By.XPATH, "//*[@id='__next']/div[3]/div/div[3]/main/div[28]/header")
-                next_page_element.location_once_scrolled_into_view
+                # next_page_element = self.driver.find_element(By.XPATH, "///div[@class='card pagination_pagination__DChuV']/header") 
+                #                                                     # //*[@id="__next"]/div[3]/div/div[3]/main/div[29]/header
+                # next_page_element.location_once_scrolled_into_view
                 sleep(2)
-                next_page = self.click_button_on_page("//a[@class='page-link next']")
+                next_page = self.click_button_on_page(self.scraper_config['jobs']['scroll_down']['next_page_xpath'])
                 
                 if not next_page:
                     break
@@ -112,10 +114,30 @@ class ReedScraper(GeneralScraper):
                 sleep(3)
 
         print(list_of_urls)
-        return set(list_of_urls)
+        return list(set(list_of_urls))
+    
+    def extract_job_data(self, list_of_urls : list): 
 
+        for item in list_of_urls: 
+            self.driver.get(item)
+            sleep(uniform(2, 4))
+            webpage_dict = self.collect_information_from_page(self.scraper_config['jobs']['start_extraction']['extract_data'])
+            sleep(uniform(2, 5))
+            self.all_data_list.append(webpage_dict)
+        
+        return self.all_data_list
+
+    def run_process(self, job_title : str):
+
+        self.land_first_page(self.base_url)
+        sleep(uniform(2,4))
+        cookies_button = self.dismiss_element(self.scraper_config['base_config']['cookies_path'], 'Cookies Content')
+        self.interact_with_search_bar(self.scraper_config['jobs']['landing_page']['interact_with_searchbar_find_job'], job_title)
+        unique_list_of_urls = self.process_reed_job_links()
+        self.extract_job_data(unique_list_of_urls)
 
     def reed_output_to_dataframe(self):
-
+        df = pd.DataFrame(self.all_data_list)
+        return df 
         pass 
     
