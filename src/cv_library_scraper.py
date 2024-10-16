@@ -6,8 +6,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 from time import sleep 
+import pandas as pd 
 
-class selfLibraryScraper(GeneralScraper):
+class CVLibraryScraper(GeneralScraper):
 
     def __init__(self, base_url : str, scraper_config_filename : str, driver_config_file : str, file_type : str = 'yaml', website_options=False):
         super().__init__(driver_config_file, file_type, website_options=website_options) 
@@ -104,4 +105,31 @@ class selfLibraryScraper(GeneralScraper):
                 sleep(3)
 
         print(job_url_list)
+        return job_url_list
+
+    def extract_cv_library_data(self, cv_library_job_url_list : list):
+
+        for job_url in cv_library_job_url_list:
+            self.driver.get(job_url)
+            sleep(uniform(2, 4))
+            webpage_dict = self.extract_data_from_webpage(self.scraper_config['jobs']['start_extraction']['extract_data'])
+            sleep(uniform(2, 5))
+            self.all_data_list.append(webpage_dict)
+
+    
+    def run_main_process(self, job_title : str):
+
+        self.land_first_page(self.base_url)
+        sleep(uniform(2,4))
+        cookies_button = self.bypass_shadow_root(self.scraper_config['jobs']['dismiss_element']['shadow_root_script'], 'Cookies Content')
+        self.interact_with_search_bar(self.scraper_config['jobs']['apply_filters']['interact_with_searchbar'], job_title)
+        unique_list_of_urls = self.process_cv_library_job_links()
+        self.extract_cv_library_data(unique_list_of_urls)
+
+    def cv_library_output_to_dataframe(self):
+        df = pd.DataFrame(self.all_data_list)
+        return df 
+        pass 
+        
+        
 
