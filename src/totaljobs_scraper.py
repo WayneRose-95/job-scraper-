@@ -6,6 +6,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep 
 from random import uniform 
+import pandas as pd 
+
 class TotalJobsScraper(GeneralScraper):
 
     def __init__(self, base_url : str, scraper_config_filename : str, driver_config_file : str, file_type : str = 'yaml', website_options=False):
@@ -93,3 +95,16 @@ class TotalJobsScraper(GeneralScraper):
             webpage_information = self.extract_job_details(self.scraper_config['jobs']['start_extraction']['extract_data'])
             sleep(uniform(2, 5))
             self.all_data_list.append(webpage_information)
+
+    def run_totaljobs_process(self, job_title : str):
+        self.land_first_page(self.base_url)
+        cookies_button = self.dismiss_element(self.scraper_config['base_config']['cookies_path'], 'Cookies Content')
+        sleep(uniform(2,4))
+        self.interact_with_search_bar(self.scraper_config['jobs']['apply_filters']['interact_with_searchbar'], job_title)
+        list_of_totaljobs_urls = self.process_totaljobs_page_links()
+        self.extract_totaljobs_information(list_of_totaljobs_urls)
+
+    def totaljobs_output_to_dataframe(self): 
+        df = pd.DataFrame(self.all_data_list)
+        return df 
+
