@@ -59,7 +59,7 @@ def scrape_indeed(job_titles : list, number_of_pages: int = None):
     indeed_df.to_csv(indeed_scraper_config['base_config']['output_file_name'], index=False)
     return indeed_df
 
-def scrape_reed(job_titles : list, number_of_pages: int = None):
+def scrape_reed(job_titles : list):
     """
     Function to extract job information from reed. 
 
@@ -81,8 +81,8 @@ def scrape_reed(job_titles : list, number_of_pages: int = None):
     """
     for job_title in job_titles:
         reed_instance.run_process(
-            job_title, 
-            number_of_pages=number_of_pages
+            job_title 
+
             )
 
     reed_df = reed_instance.reed_output_to_dataframe() 
@@ -90,7 +90,7 @@ def scrape_reed(job_titles : list, number_of_pages: int = None):
     reed_df.to_csv(reed_scraper_config['base_config']['output_file_name'], index=False)
     return reed_df  
 
-def scrape_totaljobs(job_titles : list, number_of_pages: int = None):
+def scrape_totaljobs(job_titles : list):
     """
     Function to extract job information from totaljobs. 
 
@@ -112,14 +112,40 @@ def scrape_totaljobs(job_titles : list, number_of_pages: int = None):
     """
     for job_title in job_titles:
         totaljobs_instance.run_totaljobs_process(
-            job_title, 
-            number_of_pages=number_of_pages
+            job_title 
+         
             )
 
     totaljobs_df = totaljobs_instance.totaljobs_output_to_dataframe() 
 
     totaljobs_df.to_csv(totaljobs_config['base_config']['output_file_name'], index=False)
     return totaljobs_df 
+
+def scrape_cv_library(job_titles : list):
+    """
+    Function to extract job information from cv_library. 
+
+    Parameters
+    ----------
+        job_titles (list): 
+            A list of job titles. 
+            Job titles are read in from the cv_library_config file 
+
+
+    Returns
+    -------
+        indeed_df : DataFrame
+            A dataframe representing data extracted from the website
+    """
+    for job_title in job_titles:
+        cv_instance.run_main_process(
+            job_title
+            )
+
+    cv_library_df = cv_instance.cv_library_output_to_dataframe() 
+
+    cv_library_df.to_csv(totaljobs_config['base_config']['output_file_name'], index=False)
+    return cv_library_df 
 
 def upload_to_s3(s3_file_name : str):
     """
@@ -487,6 +513,8 @@ if __name__ == "__main__":
 
     scrape_totaljobs(totaljobs_config['base_config']['job_url']
                     , totaljobs_config['base_config']['number_of_pages'])
+    
+    scrape_cv_library(cv_library_config['base_config']['job_titles'])
     # upload_to_s3(indeed_scraper_config['base_config']['output_file_name'])
     #NOTE: Using a new database for 1st and 2nd loads jobhubdb_new 
     target_db_engine = create_job_database() 
