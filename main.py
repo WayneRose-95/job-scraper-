@@ -69,10 +69,6 @@ def scrape_reed(job_titles : list):
             A list of job titles. 
             Job titles are read in from the reed_config file 
 
-        number_of_pages (int, optional): 
-            The number of pages to scrape per each job title. 
-            If the number of pages is None, then the entire website section will be scraped 
-            Defaults to None.
 
     Returns
     -------
@@ -99,11 +95,6 @@ def scrape_totaljobs(job_titles : list):
         job_titles (list): 
             A list of job titles. 
             Job titles are read in from the totaljobs_config file 
-
-        number_of_pages (int, optional): 
-            The number of pages to scrape per each job title. 
-            If the number of pages is None, then the entire website section will be scraped 
-            Defaults to None.
 
     Returns
     -------
@@ -147,7 +138,7 @@ def scrape_cv_library(job_titles : list):
     cv_library_df.to_csv(totaljobs_config['base_config']['output_file_name'], index=False)
     return cv_library_df 
 
-def upload_to_s3(s3_file_name : str):
+def upload_to_s3(s3_file_name : str, website_configuration_dict : dict):
     """
     Function to upload data to AWS S3 given a file name 
 
@@ -157,12 +148,17 @@ def upload_to_s3(s3_file_name : str):
     ----------
         s3_file_name : str
             The name of the file to send to AWS S3
+        
+        website_configuration_dict : dict 
+            A dictionary containing key-value pairs for the website's url
 
     Returns 
     -------
         None 
     """
-    job_website_name = dataframe_manipulation.extract_from_url(indeed_instance.base_url)
+    job_website_url = website_configuration_dict['base_config']['url']
+
+    job_website_name = dataframe_manipulation.extract_from_url(job_website_url)
 
     # Create the file directory 
     file_directory = f'{job_website_name}/{current_date.year}/{current_date.month}/{current_date.day}/'
@@ -504,18 +500,27 @@ def upload_dataframes(dataframe_dict : dict, target_engine : Engine, upload_cond
 
 
 if __name__ == "__main__":
-    # scrape_indeed(
-    #     indeed_scraper_config['base_config']['job_titles']
-    #     ,indeed_scraper_config['base_config']['number_of_pages']
-    #     ) 
-    scrape_reed(reed_scraper_config['base_config']['job_titles']
-                , reed_scraper_config['base_config']['number_of_pages'])
+    scrape_indeed(
+        indeed_scraper_config['base_config']['job_titles']
+        ,indeed_scraper_config['base_config']['number_of_pages']
+        ) 
+    scrape_reed(reed_scraper_config['base_config']['job_titles'])
 
-    scrape_totaljobs(totaljobs_config['base_config']['job_url']
-                    , totaljobs_config['base_config']['number_of_pages'])
+    scrape_totaljobs(totaljobs_config['base_config']['job_url'])
     
     scrape_cv_library(cv_library_config['base_config']['job_titles'])
-    # upload_to_s3(indeed_scraper_config['base_config']['output_file_name'])
+
+    upload_to_s3(indeed_scraper_config['base_config']['output_file_name'], 
+                 indeed_scraper_config)
+    
+    upload_to_s3(reed_scraper_config['base_config']['output_file_name'], 
+                 reed_scraper_config)
+    
+    upload_to_s3(totaljobs_config['base_config']['output_file_name'],
+                 totaljobs_config)
+    
+    upload_to_s3(cv_library_config['base_config']['output_file_name'],
+                 cv_library_config)
     #NOTE: Using a new database for 1st and 2nd loads jobhubdb_new 
     target_db_engine = create_job_database() 
     dataframe_dictionary = process_dataframes(
