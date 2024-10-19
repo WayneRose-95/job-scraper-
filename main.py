@@ -57,7 +57,39 @@ def scrape_indeed(job_titles : list, number_of_pages: int = None):
     indeed_df = indeed_instance.output_to_dataframe() 
 
     indeed_df.to_csv(indeed_scraper_config['base_config']['output_file_name'], index=False)
-    return indeed_df 
+    return indeed_df
+
+def scrape_reed(job_titles : list, number_of_pages: int = None):
+    """
+    Function to extract job information from reed. 
+
+    Parameters
+    ----------
+        job_titles (list): 
+            A list of job titles. 
+            Job titles are read in from the reed_config file 
+
+        number_of_pages (int, optional): 
+            The number of pages to scrape per each job title. 
+            If the number of pages is None, then the entire website section will be scraped 
+            Defaults to None.
+
+    Returns
+    -------
+        indeed_df : DataFrame
+            A dataframe representing data extracted from the website
+    """
+    for job_title in job_titles:
+        reed_instance.run_process(
+            job_title, 
+            number_of_pages=number_of_pages
+            )
+
+    reed_df = reed_instance.reed_output_to_dataframe() 
+
+    reed_df.to_csv(indeed_scraper_config['base_config']['output_file_name'], index=False)
+    return reed_df  
+
 
 def upload_to_s3(s3_file_name : str):
     """
@@ -420,6 +452,8 @@ if __name__ == "__main__":
     #     indeed_scraper_config['base_config']['job_titles']
     #     ,indeed_scraper_config['base_config']['number_of_pages']
     #     ) 
+    scrape_reed(reed_scraper_config['base_config']['job_titles']
+                , reed_scraper_config['base_config']['number_of_pages'])
     # upload_to_s3(indeed_scraper_config['base_config']['output_file_name'])
     #NOTE: Using a new database for 1st and 2nd loads jobhubdb_new 
     target_db_engine = create_job_database() 
