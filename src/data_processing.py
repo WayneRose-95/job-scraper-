@@ -162,16 +162,32 @@ class DataFrameManipulation:
         Returns
         -------
             A DataFrame object created from the raw data extracted from the list of objects.
-        
+            combined_df : DataFrame 
+                Returned if the number of objects is greater than 1 
+            df : DataFrame 
+                Returned if there is only one object in the list of objects 
         '''
+        # Get the number of elements inside the list_of_objects 
         number_of_objects = len(list_of_objects)
+        # Conditional to check if the number_of_objects is greater than 1
+        if number_of_objects > 1:
+            for index, element in enumerate(list_of_objects):
+                raw_data = element['Body'].read().decode('utf-8')
+                df = pd.read_csv(StringIO(raw_data), delimiter=',')
+                list_of_objects[index] = df 
+            combined_df = pd.concat(list_of_objects)
+            # Reset the index and drop the extra index column 
+            combined_df.reset_index(inplace=True)
+            combined_df.drop(columns='index', inplace=True)
+            return combined_df 
+        # In other cases, read in the single object. 
+        else:
+            for element in list_of_objects:
+                raw_data = element.read().decode('utf-8')
 
-        for element in list_of_objects:
-            raw_data = element.read().decode('utf-8')
+            df = pd.read_csv(StringIO(raw_data), delimiter=',')
 
-        df = pd.read_csv(StringIO(raw_data), delimiter=',')
-
-        return df 
+            return df 
          
 
     def build_dimension_table(self, df : pd.DataFrame, unique_column_name : str, order_of_columns : list):
