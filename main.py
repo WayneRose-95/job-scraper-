@@ -10,6 +10,8 @@ from src.reed_scraper import ReedScraper
 from src.cv_library_scraper import CVLibraryScraper
 from src.totaljobs_scraper import TotalJobsScraper
 from sqlalchemy.engine import Engine
+import threading 
+import concurrent.futures
 
 current_date = datetime.now() 
 indeed_instance = IndeedScraper("https://uk.indeed.com/", 'config/indeed_config.json', 'config/options_config.yaml')
@@ -316,7 +318,7 @@ def database_table_name_check(dataframe_dict : dict, target_db_engine : Engine):
     else: 
         return False
     
-def filter_dataframes(dataframe_dict : dict, target_engine : Engine, land_job_data_df : DataFrame):
+def filter_dataframes(dataframe_dict : dict, target_engine : Engine):
     """
     Function to filter dataframes. 
 
@@ -362,21 +364,6 @@ def filter_dataframes(dataframe_dict : dict, target_engine : Engine, land_job_da
     current_job_title_df = operator.read_rds_table(target_engine, 'dim_job_title')
     new_job_title_df = operator.upsert_table(current_job_title_df, dataframe_dict['dim_job_title'], 'job_title_id', 'job_title')
     
-    
-    # rebuilding the fact_table 
-    #TODO: Rebuilding the fact table does not need to be done here, since the code filters 
-    # intends to append to the dimension tables. 
-    # new_fact_job_data = dataframe_manipulation.build_fact_table(
-    #     land_job_data_df, 
-    #     new_job_title_df,
-    #     new_company_df,
-    #     new_location_df,
-    #     new_job_url_df,
-    #     new_description_df,
-    #     new_time_dimension_df
-    # )
-
-    # dataframe_dict['fact_job_data'] = new_fact_job_data
 
     return dataframe_dict
 
@@ -506,7 +493,7 @@ if __name__ == "__main__":
         ) 
     scrape_reed(reed_scraper_config['base_config']['job_titles'])
 
-    scrape_totaljobs(totaljobs_config['base_config']['job_url'])
+    scrape_totaljobs(totaljobs_config['base_config']['job_titles'])
     
     scrape_cv_library(cv_library_config['base_config']['job_titles'])
 
@@ -521,20 +508,20 @@ if __name__ == "__main__":
     
     upload_to_s3(cv_library_config['base_config']['output_file_name'],
                  cv_library_config)
-    #NOTE: Using a new database for 1st and 2nd loads jobhubdb_new 
+    # #NOTE: Using a new database for 1st and 2nd loads jobhubdb_new 
     target_db_engine = create_job_database() 
     dataframe_dictionary = process_dataframes(
-                                            [indeed_scraper_config['base_config']['s3_file_path'],
-                                             reed_scraper_config['base_config']['s3_file_path'],
-                                             totaljobs_config['base_config']['s3_file_path'],
-                                            cv_library_config['base_config']['s3_file_path']
+                                            [indeed_scraper_config['base_config']['s3_file_path']
+                                             ,reed_scraper_config['base_config']['s3_file_path']
+                                             ,totaljobs_config['base_config']['s3_file_path']
+                                            ,cv_library_config['base_config']['s3_file_path']
                                             ]
                                             )
     land_job_data_table = dataframe_dictionary['land_job_data']
 
     if database_table_name_check(dataframe_dictionary, target_db_engine) == True:
         # Filter the current dimension tables. 
-        filtered_dataframe_dictionary = filter_dataframes(dataframe_dictionary, target_db_engine, land_job_data_table)
+        filtered_dataframe_dictionary = filter_dataframes(dataframe_dictionary, target_db_engine)
         # Upload the filtered dimension tables 
         dimension_table_uploads = upload_dataframes(filtered_dataframe_dictionary, target_db_engine, 'append')
         # Afterwards, update the dimension tables, deleting duplicate records and resetting the id column of each one

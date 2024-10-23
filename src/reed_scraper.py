@@ -132,6 +132,7 @@ class ReedScraper(GeneralScraper):
         self.land_first_page(self.base_url)
         sleep(uniform(2,4))
         cookies_button = self.dismiss_element(self.scraper_config['base_config']['cookies_path'], 'Cookies Content')
+        sleep(uniform(2,4))
         self.interact_with_search_bar(self.scraper_config['jobs']['landing_page']['interact_with_searchbar_find_job'], job_title)
         unique_list_of_urls = self.process_reed_job_links()
         self.extract_job_data(unique_list_of_urls)
