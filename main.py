@@ -12,19 +12,20 @@ from src.totaljobs_scraper import TotalJobsScraper
 from sqlalchemy.engine import Engine
 import threading 
 import concurrent.futures
+import multiprocessing
 
 current_date = datetime.now() 
-indeed_instance = IndeedScraper("https://uk.indeed.com/", 'config/indeed_config.json', 'config/options_config.yaml')
-reed_instance = ReedScraper("https://www.reed.co.uk/", "config/reed_config.json", 'config/options_config.yaml')
-cv_instance = CVLibraryScraper("https://www.cv-library.co.uk/", "config/cv-library-config.json", "config/options_config.yaml")
-totaljobs_instance = TotalJobsScraper("https://www.totaljobs.com/", "config/totaljobs_config.json", "config/options_config.yaml")
+indeed_instance = IndeedScraper("https://uk.indeed.com/", 'config/indeed_config.json', 'config/options_config.yaml', website_options=True)
+reed_instance = ReedScraper("https://www.reed.co.uk/", "config/reed_config.json", 'config/options_config.yaml', website_options=True)
+# cv_instance = CVLibraryScraper("https://www.cv-library.co.uk/", "config/cv-library-config.json", "config/options_config.yaml", website_options=True)
+# totaljobs_instance = TotalJobsScraper("https://www.totaljobs.com/", "config/totaljobs_config.json", "config/options_config.yaml", website_options=True)
 data_processor = S3DataProcessing('job-scraper-data-bucket')
 dataframe_manipulation = DataFrameManipulation() 
 operator = DatabaseOperations()
 indeed_scraper_config = indeed_instance.scraper_config
 reed_scraper_config = reed_instance.scraper_config
-cv_library_config = cv_instance.scraper_config 
-totaljobs_config = totaljobs_instance.scraper_config
+# cv_library_config = cv_instance.scraper_config 
+# totaljobs_config = totaljobs_instance.scraper_config
 target_db_config = operator.load_db_credentials('config/db_creds.yaml')
 database_schema = operator.load_db_credentials('config/database_schema.yaml')
 database_name = target_db_config['DATABASE']
@@ -88,57 +89,57 @@ def scrape_reed(job_titles : list):
     reed_df.to_csv(reed_scraper_config['base_config']['output_file_name'], index=False)
     return reed_df  
 
-def scrape_totaljobs(job_titles : list):
-    """
-    Function to extract job information from totaljobs. 
+# def scrape_totaljobs(job_titles : list):
+#     """
+#     Function to extract job information from totaljobs. 
 
-    Parameters
-    ----------
-        job_titles (list): 
-            A list of job titles. 
-            Job titles are read in from the totaljobs_config file 
+#     Parameters
+#     ----------
+#         job_titles (list): 
+#             A list of job titles. 
+#             Job titles are read in from the totaljobs_config file 
 
-    Returns
-    -------
-        indeed_df : DataFrame
-            A dataframe representing data extracted from the website
-    """
-    for job_title in job_titles:
-        totaljobs_instance.run_totaljobs_process(
-            job_title 
+#     Returns
+#     -------
+#         indeed_df : DataFrame
+#             A dataframe representing data extracted from the website
+#     """
+#     for job_title in job_titles:
+#         totaljobs_instance.run_totaljobs_process(
+#             job_title 
          
-            )
+#             )
 
-    totaljobs_df = totaljobs_instance.totaljobs_output_to_dataframe() 
+#     totaljobs_df = totaljobs_instance.totaljobs_output_to_dataframe() 
 
-    totaljobs_df.to_csv(totaljobs_config['base_config']['output_file_name'], index=False)
-    return totaljobs_df 
+#     totaljobs_df.to_csv(totaljobs_config['base_config']['output_file_name'], index=False)
+#     return totaljobs_df 
 
-def scrape_cv_library(job_titles : list):
-    """
-    Function to extract job information from cv_library. 
+# def scrape_cv_library(job_titles : list):
+#     """
+#     Function to extract job information from cv_library. 
 
-    Parameters
-    ----------
-        job_titles (list): 
-            A list of job titles. 
-            Job titles are read in from the cv_library_config file 
+#     Parameters
+#     ----------
+#         job_titles (list): 
+#             A list of job titles. 
+#             Job titles are read in from the cv_library_config file 
 
 
-    Returns
-    -------
-        indeed_df : DataFrame
-            A dataframe representing data extracted from the website
-    """
-    for job_title in job_titles:
-        cv_instance.run_main_process(
-            job_title
-            )
+#     Returns
+#     -------
+#         indeed_df : DataFrame
+#             A dataframe representing data extracted from the website
+#     """
+#     for job_title in job_titles:
+#         cv_instance.run_main_process(
+#             job_title
+#             )
 
-    cv_library_df = cv_instance.cv_library_output_to_dataframe() 
+#     cv_library_df = cv_instance.cv_library_output_to_dataframe() 
 
-    cv_library_df.to_csv(totaljobs_config['base_config']['output_file_name'], index=False)
-    return cv_library_df 
+#     cv_library_df.to_csv(totaljobs_config['base_config']['output_file_name'], index=False)
+#     return cv_library_df 
 
 def upload_to_s3(s3_file_name : str, website_configuration_dict : dict):
     """
@@ -184,109 +185,109 @@ def create_job_database():
     target_database_engine = operator.connect(target_db_config, connect_to_database=True, new_db_name=database_name)
     return target_database_engine 
     
-def process_dataframes(list_of_s3_filepaths : list):
-    """
-    Function to process dataframes from an S3 bucket
+# def process_dataframes(list_of_s3_filepaths : list):
+#     """
+#     Function to process dataframes from an S3 bucket
 
-    Parameters
-    ----------
-        list_s3_file_paths : str 
-            A list representing a file paths inside the S3 bucket 
+#     Parameters
+#     ----------
+#         list_s3_file_paths : str 
+#             A list representing a file paths inside the S3 bucket 
 
-    Returns:
-        dataframe_dict: 
-            A dictionary containing dataframes where the keys represent table names and the
-            values are the corresponding dataframes.
-    """
-    # s3_objects = data_processor.list_objects(s3_file_path)
+#     Returns:
+#         dataframe_dict: 
+#             A dictionary containing dataframes where the keys represent table names and the
+#             values are the corresponding dataframes.
+#     """
+#     # s3_objects = data_processor.list_objects(s3_file_path)
 
-    list_of_responses = []
-    for filepath in list_of_s3_filepaths:
-        s3_file_path = data_processor.list_objects(filepath)
-        list_of_responses.append(s3_file_path)
-    print(list_of_responses)
+#     list_of_responses = []
+#     for filepath in list_of_s3_filepaths:
+#         s3_file_path = data_processor.list_objects(filepath)
+#         list_of_responses.append(s3_file_path)
+#     print(list_of_responses)
 
-    list_of_objects = []
-    for response in list_of_responses:
-        object_response = data_processor.read_objects_from_s3(response, 'csv')
-        list_of_objects.append(object_response)
+#     list_of_objects = []
+#     for response in list_of_responses:
+#         object_response = data_processor.read_objects_from_s3(response, 'csv')
+#         list_of_objects.append(object_response)
 
-    print(list_of_objects)
+#     print(list_of_objects)
 
-    # csv_files = data_processor.read_objects_from_s3(s3_objects, 'csv')
+#     # csv_files = data_processor.read_objects_from_s3(s3_objects, 'csv')
 
-    # Reading in a .csv from the s3 bucket
-    df = dataframe_manipulation.raw_to_dataframe(list_of_objects)
-    # Creating the company_dimension table 
-    company_df = dataframe_manipulation.build_dimension_table(df, 'company_name', ["company_name_id", "company_name"])
+#     # Reading in a .csv from the s3 bucket
+#     df = dataframe_manipulation.raw_to_dataframe(list_of_objects)
+#     # Creating the company_dimension table 
+#     company_df = dataframe_manipulation.build_dimension_table(df, 'company_name', ["company_name_id", "company_name"])
 
-    # Creating the job_title dimension table 
-    job_title_df = dataframe_manipulation.build_dimension_table(df, 'job_title', ['job_title_id', 'job_title'])
+#     # Creating the job_title dimension table 
+#     job_title_df = dataframe_manipulation.build_dimension_table(df, 'job_title', ['job_title_id', 'job_title'])
 
-    # Creating the description dimension table
-    description_df = dataframe_manipulation.build_dimension_table(df, 'job_description', ['job_description_id', 'job_description'])
+#     # Creating the description dimension table
+#     description_df = dataframe_manipulation.build_dimension_table(df, 'job_description', ['job_description_id', 'job_description'])
 
-    # Creating the job_url dimension table
-    job_url_df = dataframe_manipulation.build_dimension_table(df, 'job_url', ['job_url_id', 'job_url'])
+#     # Creating the job_url dimension table
+#     job_url_df = dataframe_manipulation.build_dimension_table(df, 'job_url', ['job_url_id', 'job_url'])
 
-    # Creating the location dimension table 
-    location_df = dataframe_manipulation.build_dimension_table(df, 'location', ['location_id', 'location'])
+#     # Creating the location dimension table 
+#     location_df = dataframe_manipulation.build_dimension_table(df, 'location', ['location_id', 'location'])
 
-    # Adds the latitude and longitude columns to the location dataframe
-    location_df[['latitude', 'longitude']] = location_df['location'].apply(
-        lambda loc: Series(dataframe_manipulation.get_geo_co_ordinates(loc))
-    )
-    # Creating the time dimension table
-    time_dimension_df = dataframe_manipulation.build_dimension_table(df, 'date_extracted', ['date_extracted_id', 'date_extracted'])
+#     # Adds the latitude and longitude columns to the location dataframe
+#     location_df[['latitude', 'longitude']] = location_df['location'].apply(
+#         lambda loc: Series(dataframe_manipulation.get_geo_co_ordinates(loc))
+#     )
+#     # Creating the time dimension table
+#     time_dimension_df = dataframe_manipulation.build_dimension_table(df, 'date_extracted', ['date_extracted_id', 'date_extracted'])
 
-    # Creating full time dimension table 
+#     # Creating full time dimension table 
 
-    full_time_dimension_df = dataframe_manipulation.build_time_dimension_table(
-        time_dimension_df, 
-        'date_extracted', 
-        [
-            'date_extracted_id', 'date_uuid', 'year', 'month', 'day',
-            'date', 'timestamp', 'date_extracted','quarter', 'day_of_week',
-            'month_name', 'is_month_start', 'is_month_end', 'is_leap_year', 
-            'is_quarter_start', 'is_quarter_end'
-        ]
-        )
-    # Creating website_table 
-    website_name_df = dataframe_manipulation.build_dimension_table(df, 'website_name', ['website_name_id', 'website_name'])
-    # Adding website url to the table
-    website_name_df['website_url'] = [
-                                        indeed_scraper_config['base_config']['url'],
-                                        reed_scraper_config['base_config']['url'],
-                                        totaljobs_config['base_config']['url'],
-                                        cv_library_config['base_config']['url']
-                                    ]
+#     full_time_dimension_df = dataframe_manipulation.build_time_dimension_table(
+#         time_dimension_df, 
+#         'date_extracted', 
+#         [
+#             'date_extracted_id', 'date_uuid', 'year', 'month', 'day',
+#             'date', 'timestamp', 'date_extracted','quarter', 'day_of_week',
+#             'month_name', 'is_month_start', 'is_month_end', 'is_leap_year', 
+#             'is_quarter_start', 'is_quarter_end'
+#         ]
+#         )
+#     # Creating website_table 
+#     website_name_df = dataframe_manipulation.build_dimension_table(df, 'website_name', ['website_name_id', 'website_name'])
+#     # Adding website url to the table
+#     website_name_df['website_url'] = [
+#                                         indeed_scraper_config['base_config']['url'],
+#                                         reed_scraper_config['base_config']['url'],
+#                                         totaljobs_config['base_config']['url'],
+#                                         cv_library_config['base_config']['url']
+#                                     ]
 
     
 
-    # Building the fact table 
-    fact_table = dataframe_manipulation.build_fact_table(
-        df, 
-        job_title_df, 
-        company_df, 
-        location_df, 
-        job_url_df, 
-        description_df, 
-        full_time_dimension_df, 
-        website_name_df
-        )
+#     # Building the fact table 
+#     fact_table = dataframe_manipulation.build_fact_table(
+#         df, 
+#         job_title_df, 
+#         company_df, 
+#         location_df, 
+#         job_url_df, 
+#         description_df, 
+#         full_time_dimension_df, 
+#         website_name_df
+#         )
 
-    dataframe_dict = {
-        "land_job_data" : df,
-        "dim_company" : company_df,
-        "dim_job_title": job_title_df, 
-        "dim_description": description_df, 
-        "dim_location": location_df,
-        "dim_date": full_time_dimension_df,
-        "dim_job_url": job_url_df,
-        "dim_website": website_name_df,
-        "fact_job_data": fact_table
-    }
-    return dataframe_dict
+#     dataframe_dict = {
+#         "land_job_data" : df,
+#         "dim_company" : company_df,
+#         "dim_job_title": job_title_df, 
+#         "dim_description": description_df, 
+#         "dim_location": location_df,
+#         "dim_date": full_time_dimension_df,
+#         "dim_job_url": job_url_df,
+#         "dim_website": website_name_df,
+#         "fact_job_data": fact_table
+#     }
+#     return dataframe_dict
 
 def database_table_name_check(dataframe_dict : dict, target_db_engine : Engine):
     """
@@ -487,61 +488,77 @@ def upload_dataframes(dataframe_dict : dict, target_engine : Engine, upload_cond
 
 
 if __name__ == "__main__":
-    scrape_indeed(
-        indeed_scraper_config['base_config']['job_titles']
-        ,indeed_scraper_config['base_config']['number_of_pages']
-        ) 
-    scrape_reed(reed_scraper_config['base_config']['job_titles'])
 
-    scrape_totaljobs(totaljobs_config['base_config']['job_titles'])
+    extract_indeed = threading.Thread(target=scrape_indeed, args=(indeed_scraper_config['base_config']['job_titles']
+        ,indeed_scraper_config['base_config']['number_of_pages']))
     
-    scrape_cv_library(cv_library_config['base_config']['job_titles'])
+    extract_reed = threading.Thread(target=scrape_reed, args=(reed_scraper_config['base_config']['job_titles'],))
 
-    upload_to_s3(indeed_scraper_config['base_config']['output_file_name'], 
-                 indeed_scraper_config)
+
+    extract_indeed.start() 
+    extract_reed.start()
+
+
+    extract_indeed.join()
+    extract_reed.join()
+ 
+
+    print('Extraction Complete!')
+    # scrape_indeed(
+    #     indeed_scraper_config['base_config']['job_titles']
+    #     ,indeed_scraper_config['base_config']['number_of_pages']
+    #     ) 
+    # scrape_reed(reed_scraper_config['base_config']['job_titles'])
+
+    # scrape_totaljobs(totaljobs_config['base_config']['job_titles'])
     
-    upload_to_s3(reed_scraper_config['base_config']['output_file_name'], 
-                 reed_scraper_config)
+    # scrape_cv_library(cv_library_config['base_config']['job_titles'])
+
+    # upload_to_s3(indeed_scraper_config['base_config']['output_file_name'], 
+    #              indeed_scraper_config)
     
-    upload_to_s3(totaljobs_config['base_config']['output_file_name'],
-                 totaljobs_config)
+    # upload_to_s3(reed_scraper_config['base_config']['output_file_name'], 
+    #              reed_scraper_config)
     
-    upload_to_s3(cv_library_config['base_config']['output_file_name'],
-                 cv_library_config)
+    # upload_to_s3(totaljobs_config['base_config']['output_file_name'],
+    #              totaljobs_config)
+    
+    # upload_to_s3(cv_library_config['base_config']['output_file_name'],
+    #              cv_library_config)
     # #NOTE: Using a new database for 1st and 2nd loads jobhubdb_new 
-    target_db_engine = create_job_database() 
-    dataframe_dictionary = process_dataframes(
-                                            [indeed_scraper_config['base_config']['s3_file_path']
-                                             ,reed_scraper_config['base_config']['s3_file_path']
-                                             ,totaljobs_config['base_config']['s3_file_path']
-                                            ,cv_library_config['base_config']['s3_file_path']
-                                            ]
-                                            )
-    land_job_data_table = dataframe_dictionary['land_job_data']
+    # target_db_engine = create_job_database() 
+    # dataframe_dictionary = process_dataframes(
+    #                                         [indeed_scraper_config['base_config']['s3_file_path']
+    #                                          ,reed_scraper_config['base_config']['s3_file_path']
+    #                                          ,totaljobs_config['base_config']['s3_file_path']
+    #                                         ,cv_library_config['base_config']['s3_file_path']
+    #                                         ]
+    #                                         )
+    # land_job_data_table = dataframe_dictionary['land_job_data']
 
-    if database_table_name_check(dataframe_dictionary, target_db_engine) == True:
-        # Filter the current dimension tables. 
-        filtered_dataframe_dictionary = filter_dataframes(dataframe_dictionary, target_db_engine)
-        # Upload the filtered dimension tables 
-        dimension_table_uploads = upload_dataframes(filtered_dataframe_dictionary, target_db_engine, 'append')
-        # Afterwards, update the dimension tables, deleting duplicate records and resetting the id column of each one
-        update_and_filter_dimension_tables(target_db_engine) 
-        # Retrieve the current dimension tables, adding them to the dataframe_dictionary 
-        new_dataframe_dict = retrieve_dimension_tables(dataframe_dictionary, target_db_engine)
-        # Rebuild the fact table with the new dataframes 
-        new_fact_table = dataframe_manipulation.build_fact_table(
-            land_job_data_table, 
-            new_dataframe_dict['dim_job_title'],
-            new_dataframe_dict['dim_company'],
-            new_dataframe_dict['dim_location'],
-            new_dataframe_dict['dim_job_url'],
-            new_dataframe_dict['dim_description'],
-            new_dataframe_dict['dim_date'], 
-            new_dataframe_dict['dim_website']
-        )
-        fact_table_df = new_fact_table
-        operator.send_data_to_database(fact_table_df, target_db_engine, "fact_job_data", 'append', database_schema)
-    else:
-        upload_dataframes(dataframe_dictionary, target_db_engine, 'replace', first_load=True)
-        operator.execute_sql('apply_primary_foreign_keys.sql', target_db_engine)
-        operator.execute_sql('create_views.sql', target_db_engine)
+    # if database_table_name_check(dataframe_dictionary, target_db_engine) == True:
+    #     # Filter the current dimension tables. 
+    #     filtered_dataframe_dictionary = filter_dataframes(dataframe_dictionary, target_db_engine)
+    #     # Upload the filtered dimension tables 
+    #     dimension_table_uploads = upload_dataframes(filtered_dataframe_dictionary, target_db_engine, 'append')
+    #     # Afterwards, update the dimension tables, deleting duplicate records and resetting the id column of each one
+    #     update_and_filter_dimension_tables(target_db_engine) 
+    #     # Retrieve the current dimension tables, adding them to the dataframe_dictionary 
+    #     new_dataframe_dict = retrieve_dimension_tables(dataframe_dictionary, target_db_engine)
+    #     # Rebuild the fact table with the new dataframes 
+    #     new_fact_table = dataframe_manipulation.build_fact_table(
+    #         land_job_data_table, 
+    #         new_dataframe_dict['dim_job_title'],
+    #         new_dataframe_dict['dim_company'],
+    #         new_dataframe_dict['dim_location'],
+    #         new_dataframe_dict['dim_job_url'],
+    #         new_dataframe_dict['dim_description'],
+    #         new_dataframe_dict['dim_date'], 
+    #         new_dataframe_dict['dim_website']
+    #     )
+    #     fact_table_df = new_fact_table
+    #     operator.send_data_to_database(fact_table_df, target_db_engine, "fact_job_data", 'append', database_schema)
+    # else:
+    #     upload_dataframes(dataframe_dictionary, target_db_engine, 'replace', first_load=True)
+    #     operator.execute_sql('apply_primary_foreign_keys.sql', target_db_engine)
+    #     operator.execute_sql('create_views.sql', target_db_engine)
