@@ -18,14 +18,14 @@ current_date = datetime.now()
 indeed_instance = IndeedScraper("https://uk.indeed.com/", 'config/indeed_config.json', 'config/options_config.yaml', website_options=True)
 reed_instance = ReedScraper("https://www.reed.co.uk/", "config/reed_config.json", 'config/options_config.yaml', website_options=True)
 # cv_instance = CVLibraryScraper("https://www.cv-library.co.uk/", "config/cv-library-config.json", "config/options_config.yaml", website_options=True)
-# totaljobs_instance = TotalJobsScraper("https://www.totaljobs.com/", "config/totaljobs_config.json", "config/options_config.yaml", website_options=True)
+totaljobs_instance = TotalJobsScraper("https://www.totaljobs.com/", "config/totaljobs_config.json", "config/options_config.yaml", website_options=True)
 data_processor = S3DataProcessing('job-scraper-data-bucket')
 dataframe_manipulation = DataFrameManipulation() 
 operator = DatabaseOperations()
 indeed_scraper_config = indeed_instance.scraper_config
 reed_scraper_config = reed_instance.scraper_config
 # cv_library_config = cv_instance.scraper_config 
-# totaljobs_config = totaljobs_instance.scraper_config
+totaljobs_config = totaljobs_instance.scraper_config
 target_db_config = operator.load_db_credentials('config/db_creds.yaml')
 database_schema = operator.load_db_credentials('config/database_schema.yaml')
 database_name = target_db_config['DATABASE']
@@ -89,31 +89,31 @@ def scrape_reed(job_titles : list):
     reed_df.to_csv(reed_scraper_config['base_config']['output_file_name'], index=False)
     return reed_df  
 
-# def scrape_totaljobs(job_titles : list):
-#     """
-#     Function to extract job information from totaljobs. 
+def scrape_totaljobs(job_titles : list):
+    """
+    Function to extract job information from totaljobs. 
 
-#     Parameters
-#     ----------
-#         job_titles (list): 
-#             A list of job titles. 
-#             Job titles are read in from the totaljobs_config file 
+    Parameters
+    ----------
+        job_titles (list): 
+            A list of job titles. 
+            Job titles are read in from the totaljobs_config file 
 
-#     Returns
-#     -------
-#         indeed_df : DataFrame
-#             A dataframe representing data extracted from the website
-#     """
-#     for job_title in job_titles:
-#         totaljobs_instance.run_totaljobs_process(
-#             job_title 
+    Returns
+    -------
+        indeed_df : DataFrame
+            A dataframe representing data extracted from the website
+    """
+    for job_title in job_titles:
+        totaljobs_instance.run_totaljobs_process(
+            job_title 
          
-#             )
+            )
 
-#     totaljobs_df = totaljobs_instance.totaljobs_output_to_dataframe() 
+    totaljobs_df = totaljobs_instance.totaljobs_output_to_dataframe() 
 
-#     totaljobs_df.to_csv(totaljobs_config['base_config']['output_file_name'], index=False)
-#     return totaljobs_df 
+    totaljobs_df.to_csv(totaljobs_config['base_config']['output_file_name'], index=False)
+    return totaljobs_df 
 
 # def scrape_cv_library(job_titles : list):
 #     """
@@ -138,7 +138,7 @@ def scrape_reed(job_titles : list):
 
 #     cv_library_df = cv_instance.cv_library_output_to_dataframe() 
 
-#     cv_library_df.to_csv(totaljobs_config['base_config']['output_file_name'], index=False)
+#     cv_library_df.to_csv(cv_library_config['base_config']['output_file_name'], index=False)
 #     return cv_library_df 
 
 def upload_to_s3(s3_file_name : str, website_configuration_dict : dict):
@@ -494,13 +494,15 @@ if __name__ == "__main__":
     
     extract_reed = threading.Thread(target=scrape_reed, args=(reed_scraper_config['base_config']['job_titles'],))
 
+    extract_totaljobs = threading.Thread(target=scrape_totaljobs, args=(totaljobs_config['base_config']['job_titles'], ))
 
     extract_indeed.start() 
     extract_reed.start()
-
+    extract_totaljobs.start() 
 
     extract_indeed.join()
     extract_reed.join()
+    extract_totaljobs.join() 
  
 
     print('Extraction Complete!')
