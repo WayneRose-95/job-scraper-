@@ -11,8 +11,7 @@ from src.cv_library_scraper import CVLibraryScraper
 from src.totaljobs_scraper import TotalJobsScraper
 from sqlalchemy.engine import Engine
 import threading 
-import concurrent.futures
-import multiprocessing
+
 
 current_date = datetime.now() 
 indeed_instance = IndeedScraper("https://uk.indeed.com/", 'config/indeed_config.json', 'config/options_config.yaml', website_options=True)
@@ -60,6 +59,7 @@ def scrape_indeed(job_titles : list, number_of_pages: int = None):
     indeed_df = indeed_instance.output_to_dataframe() 
 
     indeed_df.to_csv(indeed_scraper_config['base_config']['output_file_name'], index=False)
+    print('Extraction from Indeed complete')
     return indeed_df
 
 def scrape_reed(job_titles : list):
@@ -87,6 +87,7 @@ def scrape_reed(job_titles : list):
     reed_df = reed_instance.reed_output_to_dataframe() 
 
     reed_df.to_csv(reed_scraper_config['base_config']['output_file_name'], index=False)
+    print('Extraction from Reed complete')
     return reed_df  
 
 def scrape_totaljobs(job_titles : list):
@@ -113,6 +114,7 @@ def scrape_totaljobs(job_titles : list):
     totaljobs_df = totaljobs_instance.totaljobs_output_to_dataframe() 
 
     totaljobs_df.to_csv(totaljobs_config['base_config']['output_file_name'], index=False)
+    print('Extraction from totaljobs complete')
     return totaljobs_df 
 
 def scrape_cv_library(job_titles : list):
@@ -139,6 +141,7 @@ def scrape_cv_library(job_titles : list):
     cv_library_df = cv_instance.cv_library_output_to_dataframe() 
 
     cv_library_df.to_csv(cv_library_config['base_config']['output_file_name'], index=False)
+    print('Extraction from cv-library complete')
     return cv_library_df 
 
 def upload_to_s3(s3_file_name : str, website_configuration_dict : dict):
@@ -199,7 +202,7 @@ def process_dataframes(list_of_s3_filepaths : list):
             A dictionary containing dataframes where the keys represent table names and the
             values are the corresponding dataframes.
     """
-    # s3_objects = data_processor.list_objects(s3_file_path)
+
 
     list_of_responses = []
     for filepath in list_of_s3_filepaths:
@@ -214,7 +217,6 @@ def process_dataframes(list_of_s3_filepaths : list):
 
     print(list_of_objects)
 
-    # csv_files = data_processor.read_objects_from_s3(s3_objects, 'csv')
 
     # Reading in a .csv from the s3 bucket
     df = dataframe_manipulation.raw_to_dataframe(list_of_objects)
@@ -509,15 +511,6 @@ if __name__ == "__main__":
     extract_cv_library.join() 
 
     print('Extraction Complete!')
-    # scrape_indeed(
-    #     indeed_scraper_config['base_config']['job_titles']
-    #     ,indeed_scraper_config['base_config']['number_of_pages']
-    #     ) 
-    # scrape_reed(reed_scraper_config['base_config']['job_titles'])
-
-    # scrape_totaljobs(totaljobs_config['base_config']['job_titles'])
-    
-    # scrape_cv_library(cv_library_config['base_config']['job_titles'])
 
     upload_to_s3(indeed_scraper_config['base_config']['output_file_name'], 
                  indeed_scraper_config)
