@@ -106,5 +106,6 @@ class TotalJobsScraper(GeneralScraper):
 
     def totaljobs_output_to_dataframe(self): 
         df = pd.DataFrame(self.all_data_list)
+        print(df)
         return df 
 

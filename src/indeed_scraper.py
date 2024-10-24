@@ -2,7 +2,7 @@ from src.general_scraper import GeneralScraper
 from time import sleep 
 from random import uniform
 from datetime import datetime
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium import webdriver
 from selenium.webdriver.remote.webelement import WebElement
@@ -242,7 +242,12 @@ class IndeedScraper(GeneralScraper):
             if "interact_with_searchbar" in action_key:
                 self.interact_with_search_bar(value,job_title)   
             elif "click_button" in action_key:
-                self.click_button_on_page(value)
+                try:
+                    self.click_button_on_page(value)
+                except NoSuchElementException:
+                    self.driver.refresh() 
+                    sleep(3)
+                    self.click_button_on_page(value)
             elif "extract_data" in action_key:
                 self.set_pagination(value, number_of_pages)
             else:

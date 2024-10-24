@@ -2,7 +2,7 @@ from datetime import datetime
 from random import uniform 
 from src.general_scraper import GeneralScraper
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import StaleElementReferenceException, ElementClickInterceptedException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep 
@@ -103,7 +103,11 @@ class ReedScraper(GeneralScraper):
                 #                                                     # //*[@id="__next"]/div[3]/div/div[3]/main/div[29]/header
                 # next_page_element.location_once_scrolled_into_view
                 sleep(2)
-                next_page = self.click_button_on_page(self.scraper_config['jobs']['scroll_down']['next_page_xpath'])
+                try:
+                    next_page = self.click_button_on_page(self.scraper_config['jobs']['scroll_down']['next_page_xpath'])
+                except ElementClickInterceptedException:
+                    self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
+                    next_page = self.click_button_on_page(self.scraper_config['jobs']['scroll_down']['next_page_xpath'])
                 
                 if not next_page:
                     break
@@ -139,6 +143,7 @@ class ReedScraper(GeneralScraper):
 
     def reed_output_to_dataframe(self):
         df = pd.DataFrame(self.all_data_list)
+        print(df)
         return df 
         pass 
     
