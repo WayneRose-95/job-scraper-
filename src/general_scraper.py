@@ -424,12 +424,22 @@ class GeneralScraper:
         
         Prints a message indicating whether the element was successfully located or if a timeout occurred.
         """
-        
-        element_present = EC.presence_of_element_located((By.XPATH, xpath))
-        WebDriverWait(self.driver, timeout).until(element_present)
-        sleep(uniform(0.5, 2))
-        print(f"Page loaded, element {xpath} is present.")
-        return True
+        try:
+            element_present = EC.presence_of_element_located((By.XPATH, xpath))
+            WebDriverWait(self.driver, timeout).until(element_present)
+            sleep(uniform(0.5, 2))
+            print(f"Page loaded, element {xpath} is present.")
+            return True
+        except TimeoutException:
+            print(f"TimeoutException on this {xpath} retrying.")
+            sleep(uniform(0.5,2))
+            self.driver.refresh()
+            element_present = EC.presence_of_element_located((By.XPATH, xpath))
+            WebDriverWait(self.driver, timeout).until(
+                lambda driver: driver.execute_script("return document.readyState") == "complete"
+            )
+            sleep(uniform(0.5, 2))
+            
 
     def dismiss_element(self, element_xpath, element_description):
         """

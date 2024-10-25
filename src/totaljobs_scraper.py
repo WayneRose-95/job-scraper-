@@ -38,7 +38,7 @@ class TotalJobsScraper(GeneralScraper):
                 else:
                     data[key] = 'N/A'
             elif key == 'website_name':
-                data[key] = value
+                data[key] = "totaljobs"
             elif 'date' in key:
                 data[key] = datetime.today()
             else:
@@ -106,5 +106,6 @@ class TotalJobsScraper(GeneralScraper):
 
     def totaljobs_output_to_dataframe(self): 
         df = pd.DataFrame(self.all_data_list)
+        print(df)
         return df 
 

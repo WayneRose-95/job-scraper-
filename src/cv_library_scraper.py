@@ -128,8 +128,9 @@ class CVLibraryScraper(GeneralScraper):
 
     def cv_library_output_to_dataframe(self):
         df = pd.DataFrame(self.all_data_list)
+        print(df)
         return df 
-        pass 
+        
         
         
 
