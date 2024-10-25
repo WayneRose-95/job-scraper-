@@ -491,23 +491,25 @@ def upload_dataframes(dataframe_dict : dict, target_engine : Engine, upload_cond
 
 if __name__ == "__main__":
 
+    scrape_totaljobs(totaljobs_config['base_config']['job_titles'])
+
     extract_indeed = threading.Thread(target=scrape_indeed, args=(indeed_scraper_config['base_config']['job_titles']
         ,indeed_scraper_config['base_config']['number_of_pages']))
     
     extract_reed = threading.Thread(target=scrape_reed, args=(reed_scraper_config['base_config']['job_titles'],))
 
-    extract_totaljobs = threading.Thread(target=scrape_totaljobs, args=(totaljobs_config['base_config']['job_titles'], ))
+    # extract_totaljobs = threading.Thread(target=scrape_totaljobs, args=(totaljobs_config['base_config']['job_titles'], ))
 
     extract_cv_library = threading.Thread(target=scrape_cv_library, args=(cv_library_config['base_config']['job_titles'], ))
 
     extract_indeed.start() 
     extract_reed.start()
-    extract_totaljobs.start()
+    # extract_totaljobs.start()
     extract_cv_library.start()  
 
     extract_indeed.join()
     extract_reed.join()
-    extract_totaljobs.join() 
+    # extract_totaljobs.join() 
     extract_cv_library.join() 
 
     print('Extraction Complete!')

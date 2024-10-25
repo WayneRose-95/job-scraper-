@@ -38,7 +38,7 @@ class TotalJobsScraper(GeneralScraper):
                 else:
                     data[key] = 'N/A'
             elif key == 'website_name':
-                data[key] = value
+                data[key] = "totaljobs"
             elif 'date' in key:
                 data[key] = datetime.today()
             else:
