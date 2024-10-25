@@ -2,8 +2,9 @@ from src.general_scraper import GeneralScraper
 from time import sleep 
 from random import uniform
 from datetime import datetime
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException
 from selenium.webdriver.common.by import By
+from selenium import webdriver
 from selenium.webdriver.remote.webelement import WebElement
 import pandas as pd 
 
@@ -22,8 +23,30 @@ class IndeedScraper(GeneralScraper):
             scraper_config_path, 
             file_type 
         )
-    def extract_data_entry(self, driver, job_paths : dict): #, job_detail_url
-        """Creates a data dictionary for each job card element."""
+    def extract_data_entry(self, driver : webdriver, job_paths : dict): 
+        """
+        Creates a data dictionary for each job card element.
+
+        Parameters
+        ----------
+
+            driver: webdriver 
+                A selenium.webdriver object 
+
+            job_paths : dict 
+                A dictionary containing key value pair representing the elements on the webpage. 
+
+        
+        Returns 
+        -------
+            data : dict 
+                A dictionary representing the elements on the webpage. 
+
+        Raises
+        ------
+            NoSuchElementException if the element cannot be found on the webpage. 
+        
+        """
 
         sleep(uniform(2, 4))
         data = {}
@@ -37,6 +60,8 @@ class IndeedScraper(GeneralScraper):
                     data[key] = self.driver.current_url
                 else:
                     data[key] = 'N/A'
+            elif key == 'website_name':
+                data[key] = value
             elif 'date' in key:
                 data[key] = datetime.today()
             else:
@@ -48,21 +73,27 @@ class IndeedScraper(GeneralScraper):
         '''
         Method to process a web_element on a given webpage. 
 
-        Parameters: 
+        Parameters
+        ----------
         job_cards : WebElement 
-        A web_element representing a single card on the webpage 
+            A web_element representing a single card on the webpage 
 
         configuration_dict : dict 
-        A dictionary representing the configuration file for the website 
+            A dictionary representing the configuration file for the website 
 
         index : int 
-        The index of the list of webelements 
+            The index of the list of webelements 
 
         container_xpath : str 
         An string representing the container on the webpage 
 
         number_of_retries : int = 3 
-        The number of retries to retrieve the element from the webpage : default 3 retries. 
+            The number of retries to retrieve the element from the webpage. 
+            The default 3 retries.
+
+        Returns 
+        -------
+            None  
         '''
         while number_of_retries > 0:
             try:
@@ -106,18 +137,20 @@ class IndeedScraper(GeneralScraper):
         Extracts data from the website given a dictionary of key value pairs 
         representing the elements on the website 
 
-        Parameters: 
+        Parameters 
+        ----------
 
-        job_paths : dict 
+            job_paths : dict 
 
-        A dictionary of key value pairs 
-        representing the elements on the website 
+                A dictionary of key value pairs 
+                representing the elements on the website 
 
-        Returns: 
+        Returns:
+        --------
 
-        self.all_data_list : list 
+            self.all_data_list : list 
 
-        A list of all of the data extracted from the website
+                A list of all of the data extracted from the website
 
         '''
         container_xpath = job_paths['main_container']
@@ -136,17 +169,23 @@ class IndeedScraper(GeneralScraper):
         '''
         Method to determine how scraper navigates through the webpage given a dictionary of options 
 
-        Parameters: 
+        Parameters
+        ---------- 
 
-        webpage_element_dict : dict 
+            webpage_element_dict : dict 
 
-        A dictionary of key-value pairs containing xpaths from a .json file
+                A dictionary of key-value pairs containing xpaths from a .json file
 
-        number_of_pages : int = None 
+            number_of_pages : int = None 
 
-        The number of pages to be scraped. Default (None)
+                The number of pages to be scraped. Default (None)
 
-        NOTE: If the number_of_pages is None then the entire section will be scraped. 
+                NOTE: If the number_of_pages is None then the entire section will be scraped. 
+
+        Returns 
+        -------
+
+            None 
 
         '''
         if number_of_pages is not None:
@@ -170,21 +209,27 @@ class IndeedScraper(GeneralScraper):
         '''
         Method to decide the order of execution for actions within the scraper based on the .json file 
 
-        Parameters: 
+        Parameters
+        ---------- 
 
-        actions : dict 
+            actions : dict 
 
-        A dictionary containing key-value pairs of actions to take 
+                A dictionary containing key-value pairs of actions to take 
 
-        job_title : str 
+            job_title : str 
 
-        The name of the job_title being searched 
+                The name of the job_title being searched 
 
-        number_of_pages : int = None 
+            number_of_pages : int = None 
 
-        The number of pages to be scraped. Default (None)
+                The number of pages to be scraped. Default (None)
 
-        NOTE: If the number_of_pages is None then the entire section will be scraped. 
+                NOTE: If the number_of_pages is None then the entire section will be scraped. 
+        
+        Returns 
+        -------
+
+            None
         '''
    
         for action_key, value in actions.items():
@@ -197,7 +242,12 @@ class IndeedScraper(GeneralScraper):
             if "interact_with_searchbar" in action_key:
                 self.interact_with_search_bar(value,job_title)   
             elif "click_button" in action_key:
-                self.click_button_on_page(value)
+                try:
+                    self.click_button_on_page(value)
+                except NoSuchElementException:
+                    self.driver.refresh() 
+                    sleep(3)
+                    self.click_button_on_page(value)
             elif "extract_data" in action_key:
                 self.set_pagination(value, number_of_pages)
             else:
@@ -208,17 +258,23 @@ class IndeedScraper(GeneralScraper):
         '''
         Main method to execute the scraping process 
 
-        Parameters: 
+        Parameters
+        ----------
 
-        job_title : str
+            job_title : str
 
-        The job title being scraped 
+                The job title being scraped 
 
-        number_of_pages : int = None 
+            number_of_pages : int = None 
 
-        The number of pages to be scraped. Default (None)
+                The number of pages to be scraped. Default (None)
 
-        NOTE: If the number_of_pages is None then the entire section will be scraped. 
+                NOTE: If the number_of_pages is None then the entire section will be scraped. 
+
+        
+        Returns
+        ------- 
+            None
 
         '''
         self.land_first_page(self.base_url)
@@ -232,11 +288,13 @@ class IndeedScraper(GeneralScraper):
         Outputs the data extracted from the website, 
         converting said data into pandas DataFrame
 
-        Returns: 
+        Returns
+        -------
 
-        df : pd.DataFrame 
+            df : pd.DataFrame 
 
-        A pandas Dataframe object
+                A pandas Dataframe object
+                
         """
         df = pd.DataFrame(self.all_data_list)
         print(df)

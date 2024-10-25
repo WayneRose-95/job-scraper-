@@ -18,9 +18,11 @@ ADD PRIMARY KEY(location_id);
 ALTER TABLE dim_description
 ADD PRIMARY KEY(job_description_id);
 
+ALTER TABLE dim_website
+ADD PRIMARY KEY(website_name_id); 
+
 ALTER TABLE fact_job_data 
 ADD PRIMARY KEY(unique_id);  
-
 
 
 ALTER TABLE fact_job_data
@@ -46,5 +48,9 @@ FOREIGN KEY(date_uuid) REFERENCES dim_date(date_uuid);
 ALTER TABLE fact_job_data 
 ADD CONSTRAINT FK_job_description_id 
 FOREIGN KEY(job_description_id) REFERENCES dim_description(job_description_id);
+
+ALTER TABLE fact_job_data 
+ADD CONSTRAINT FK_website_name_id 
+FOREIGN KEY(website_name_id) REFERENCES dim_website(website_name_id);
 
 
