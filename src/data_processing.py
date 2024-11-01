@@ -1,8 +1,11 @@
 from botocore.exceptions import ClientError
 from datetime import datetime
 from geopy.geocoders import Nominatim
+from functools import lru_cache
 from io import StringIO
+from urllib3.exceptions import ReadTimeoutError
 from uuid import uuid4
+from time import sleep
 import boto3
 import pandas as pd
 import re
@@ -396,6 +399,7 @@ class DataFrameManipulation:
         return fact_job_data_df
     
     @staticmethod
+    @lru_cache(maxsize=1000)
     def get_geo_co_ordinates(location : str):
         '''
         Takes a location string as input and returns its latitude and
@@ -416,11 +420,17 @@ class DataFrameManipulation:
             longitude.
 
         '''
-        geolocator = Nominatim(user_agent='location')
-        location = geolocator.geocode(location)
-        if location:
-            return location.latitude, location.longitude
-        else:
+        geolocator = Nominatim(user_agent='location', timeout=10)
+        try:
+            location = geolocator.geocode(location)
+            sleep(2)
+            if location:
+                print(location.latitude, location.longitude)
+                return location.latitude, location.longitude
+            else:
+                return None, None
+        except ReadTimeoutError:
+            print(f"Request Timed out for {location} returning None")
             return None, None
     
 
